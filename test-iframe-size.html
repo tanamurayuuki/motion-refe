@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iframe サイズテスト</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-section {
+            margin-bottom: 40px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .iframe-container {
+            position: relative;
+            width: 100%;
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin: 10px 0;
+        }
+        
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+        
+        .size-400 { height: 400px; }
+        .size-500 { height: 500px; }
+        .size-550 { height: 550px; }
+        .size-600 { height: 600px; }
+    </style>
+</head>
+<body>
+    <h1>Iframe サイズ比較テスト</h1>
+    
+    <div class="test-section">
+        <h2>基本グラフ - 400px（従来）</h2>
+        <div class="iframe-container size-400">
+            <iframe src="assets/animations/basic-graphs/bar-chart.html"></iframe>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>基本グラフ - 500px（新規）</h2>
+        <div class="iframe-container size-500">
+            <iframe src="assets/animations/basic-graphs/bar-chart.html"></iframe>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>表現テクニック - 550px</h2>
+        <div class="iframe-container size-550">
+            <iframe src="assets/animations/techniques/counter.html"></iframe>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>用途・シーン別 - 600px</h2>
+        <div class="iframe-container size-600">
+            <iframe src="assets/animations/use-cases/product-demo.html"></iframe>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>用途・シーン別 - ビジネスレポート 600px</h2>
+        <div class="iframe-container size-600">
+            <iframe src="assets/animations/use-cases/business-report.html"></iframe>
+        </div>
+    </div>
+</body>
+</html>

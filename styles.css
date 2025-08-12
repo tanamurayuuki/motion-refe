@@ -1959,3 +1959,35 @@ body {
         font-size: 13px;
     }
 }
+
+/* Iframe Container Styles */
+.iframe-container {
+    position: relative !important;
+    width: 100% !important;
+    background: #f8f9fa !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    margin: 0 auto !important;
+}
+
+.iframe-container iframe {
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    display: block !important;
+}
+
+/* カテゴリ別のレスポンシブ調整 */
+@media (max-width: 768px) {
+    .iframe-container {
+        height: 450px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .iframe-container {
+        height: 400px !important;
+        border-radius: 4px !important;
+    }
+}

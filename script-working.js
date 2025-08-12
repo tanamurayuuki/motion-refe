@@ -292,16 +292,24 @@ function updateVideoPlayer(content) {
                 animationContainer.innerHTML = '';
                 
                 setTimeout(() => {
+                    // カテゴリに応じて適切な高さを設定
+                    let iframeHeight = '500px';
+                    if (content.category === 'use-cases') {
+                        iframeHeight = '600px'; // 用途・シーン別は大きなレイアウトのため高くする
+                    } else if (content.category === 'techniques') {
+                        iframeHeight = '550px'; // 表現テクニックもやや高く
+                    }
+                    
                     animationContainer.innerHTML = `
-                        <div class="iframe-container" style="position: relative; width: 100%; height: 400px; background: #f8f9fa; border-radius: 8px; overflow: hidden;">
+                        <div class="iframe-container" style="position: relative; width: 100%; height: ${iframeHeight}; background: #f8f9fa; border-radius: 8px; overflow: hidden;">
                             <iframe src="${iframeSrc}" 
-                                    style="width: 100%; height: 100%; border: none;"
+                                    style="width: 100%; height: 100%; border: none; transform: scale(1);"
                                     title="${content.title}"
                                     onload="console.log('Iframe loaded:', '${content.title}')">
                             </iframe>
                         </div>
                     `;
-                    console.log('Iframe created with URL:', iframeSrc);
+                    console.log('Iframe created with URL:', iframeSrc, 'Height:', iframeHeight);
                 }, 100);
             }
             
