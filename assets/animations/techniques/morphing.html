@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>モーフィングアニメーション - グラフ形状変化</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">グラフ形状変化</h2>
+        
+        <div class="chart-area">
+            <div class="morphing-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="morphingChart">
+                    <!-- Morphing shapes will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Different chart configurations to morph between
+        const chartConfigs = [
+            {
+                name: "棒グラフ",
+                type: "bar",
+                data: [120, 150, 180, 220, 280],
+                color: "#FF6B6B",
+                description: "年度別売上推移"
+            },
+            {
+                name: "折れ線グラフ",
+                type: "line", 
+                data: [120, 150, 180, 220, 280],
+                color: "#4ECDC4",
+                description: "成長トレンド表示"
+            },
+            {
+                name: "面グラフ",
+                type: "area",
+                data: [120, 150, 180, 220, 280],
+                color: "#45B7D1",
+                description: "累積効果の視覚化"
+            },
+            {
+                name: "円グラフ",
+                type: "pie",
+                data: [20, 25, 30, 35, 40], // Normalized to 150 total
+                color: "#96CEB4",
+                description: "構成比の表現"
+            }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentConfigIndex = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const margin = { top: 60, right: 60, bottom: 60, left: 60 };
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+        const centerX = margin.left + width / 2;
+        const centerY = margin.top + height / 2;
+
+        function initChart() {
+            const svg = document.getElementById('morphingChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add axes (will be shown/hidden based on chart type)
+            addAxes(svg);
+            
+            // Add morphing element
+            addMorphingElement(svg);
+            
+            // Add chart type indicator
+            addChartTypeIndicator(svg);
+        }
+
+        function addAxes(svg) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'axes-group');
+            g.setAttribute('opacity', '0.3');
+            
+            // X axis
+            const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            xAxis.setAttribute('x1', margin.left);
+            xAxis.setAttribute('y1', margin.top + height);
+            xAxis.setAttribute('x2', margin.left + width);
+            xAxis.setAttribute('y2', margin.top + height);
+            xAxis.setAttribute('stroke', '#999');
+            xAxis.setAttribute('stroke-width', '2');
+            g.appendChild(xAxis);
+
+            // Y axis
+            const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            yAxis.setAttribute('x1', margin.left);
+            yAxis.setAttribute('y1', margin.top);
+            yAxis.setAttribute('x2', margin.left);
+            yAxis.setAttribute('y2', margin.top + height);
+            yAxis.setAttribute('stroke', '#999');
+            yAxis.setAttribute('stroke-width', '2');
+            g.appendChild(yAxis);
+
+            // Grid lines
+            for (let i = 1; i <= 4; i++) {
+                const gridLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                const y = margin.top + (height / 4) * i;
+                gridLine.setAttribute('x1', margin.left);
+                gridLine.setAttribute('y1', y);
+                gridLine.setAttribute('x2', margin.left + width);
+                gridLine.setAttribute('y2', y);
+                gridLine.setAttribute('stroke', '#eee');
+                gridLine.setAttribute('stroke-width', '1');
+                g.appendChild(gridLine);
+            }
+
+            svg.appendChild(g);
+        }
+
+        function addMorphingElement(svg) {
+            // Main morphing path
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('id', 'morphing-path');
+            path.setAttribute('fill', chartConfigs[0].color);
+            path.setAttribute('stroke', chartConfigs[0].color);
+            path.setAttribute('stroke-width', '3');
+            path.setAttribute('opacity', '0.8');
+            
+            // Start with first chart configuration
+            const initialPath = generatePathForChart(chartConfigs[0]);
+            path.setAttribute('d', initialPath);
+            
+            svg.appendChild(path);
+            
+            // Add data points for line/area charts
+            addDataPoints(svg, chartConfigs[0]);
+        }
+
+        function addDataPoints(svg, config) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'data-points');
+            g.setAttribute('opacity', config.type === 'line' || config.type === 'area' ? '1' : '0');
+            
+            config.data.forEach((value, i) => {
+                const x = margin.left + (width / (config.data.length - 1)) * i;
+                const maxValue = Math.max(...config.data);
+                const y = margin.top + height - (value / maxValue) * height;
+                
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', x);
+                circle.setAttribute('cy', y);
+                circle.setAttribute('r', '5');
+                circle.setAttribute('fill', config.color);
+                circle.setAttribute('stroke', '#fff');
+                circle.setAttribute('stroke-width', '2');
+                circle.setAttribute('class', 'data-point');
+                
+                g.appendChild(circle);
+            });
+            
+            svg.appendChild(g);
+        }
+
+        function addChartTypeIndicator(svg) {
+            // Background for indicator
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('x', margin.left);
+            bg.setAttribute('y', 10);
+            bg.setAttribute('width', 200);
+            bg.setAttribute('height', 40);
+            bg.setAttribute('fill', 'white');
+            bg.setAttribute('stroke', '#ddd');
+            bg.setAttribute('stroke-width', '1');
+            bg.setAttribute('opacity', '0.9');
+            bg.setAttribute('rx', '5');
+            svg.appendChild(bg);
+            
+            // Chart type name
+            const typeName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            typeName.setAttribute('id', 'chart-type-name');
+            typeName.setAttribute('x', margin.left + 10);
+            typeName.setAttribute('y', 28);
+            typeName.setAttribute('class', 'chart-type-text');
+            typeName.textContent = chartConfigs[0].name;
+            svg.appendChild(typeName);
+            
+            // Chart description
+            const description = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            description.setAttribute('id', 'chart-description');
+            description.setAttribute('x', margin.left + 10);
+            description.setAttribute('y', 42);
+            description.setAttribute('class', 'description-text');
+            description.textContent = chartConfigs[0].description;
+            svg.appendChild(description);
+        }
+
+        function generatePathForChart(config) {
+            const maxValue = Math.max(...config.data);
+            
+            switch (config.type) {
+                case 'bar':
+                    return generateBarPath(config.data, maxValue);
+                case 'line':
+                    return generateLinePath(config.data, maxValue);
+                case 'area':
+                    return generateAreaPath(config.data, maxValue);
+                case 'pie':
+                    return generatePiePath(config.data);
+                default:
+                    return '';
+            }
+        }
+
+        function generateBarPath(data, maxValue) {
+            let path = '';
+            const barWidth = (width / data.length) * 0.6;
+            const barSpacing = (width / data.length) * 0.4;
+            
+            data.forEach((value, i) => {
+                const x = margin.left + (width / data.length) * i + barSpacing / 2;
+                const barHeight = (value / maxValue) * height;
+                const y = margin.top + height - barHeight;
+                
+                path += `M ${x} ${margin.top + height} `;
+                path += `L ${x} ${y} `;
+                path += `L ${x + barWidth} ${y} `;
+                path += `L ${x + barWidth} ${margin.top + height} Z `;
+            });
+            
+            return path;
+        }
+
+        function generateLinePath(data, maxValue) {
+            let path = '';
+            
+            data.forEach((value, i) => {
+                const x = margin.left + (width / (data.length - 1)) * i;
+                const y = margin.top + height - (value / maxValue) * height;
+                
+                if (i === 0) {
+                    path += `M ${x} ${y}`;
+                } else {
+                    path += ` L ${x} ${y}`;
+                }
+            });
+            
+            return path;
+        }
+
+        function generateAreaPath(data, maxValue) {
+            let path = '';
+            
+            // Top line
+            data.forEach((value, i) => {
+                const x = margin.left + (width / (data.length - 1)) * i;
+                const y = margin.top + height - (value / maxValue) * height;
+                
+                if (i === 0) {
+                    path += `M ${x} ${y}`;
+                } else {
+                    path += ` L ${x} ${y}`;
+                }
+            });
+            
+            // Bottom line (baseline)
+            const lastX = margin.left + width;
+            const firstX = margin.left;
+            const baselineY = margin.top + height;
+            
+            path += ` L ${lastX} ${baselineY}`;
+            path += ` L ${firstX} ${baselineY} Z`;
+            
+            return path;
+        }
+
+        function generatePiePath(data) {
+            const radius = Math.min(width, height) / 3;
+            const total = data.reduce((sum, value) => sum + value, 0);
+            let currentAngle = -Math.PI / 2; // Start from top
+            let path = '';
+            
+            data.forEach(value => {
+                const angleSpan = (value / total) * 2 * Math.PI;
+                const endAngle = currentAngle + angleSpan;
+                
+                const x1 = centerX + radius * Math.cos(currentAngle);
+                const y1 = centerY + radius * Math.sin(currentAngle);
+                const x2 = centerX + radius * Math.cos(endAngle);
+                const y2 = centerY + radius * Math.sin(endAngle);
+                
+                const largeArcFlag = angleSpan > Math.PI ? '1' : '0';
+                
+                path += `M ${centerX} ${centerY} `;
+                path += `L ${x1} ${y1} `;
+                path += `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z `;
+                
+                currentAngle = endAngle;
+            });
+            
+            return path;
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            morphToNextChart();
+        }
+
+        function morphToNextChart() {
+            if (!isPlaying) return;
+            
+            const nextIndex = (currentConfigIndex + 1) % chartConfigs.length;
+            const currentConfig = chartConfigs[currentConfigIndex];
+            const nextConfig = chartConfigs[nextIndex];
+            
+            const svg = document.getElementById('morphingChart');
+            const path = svg.querySelector('#morphing-path');
+            const axesGroup = svg.querySelector('.axes-group');
+            const dataPoints = svg.querySelector('.data-points');
+            const typeName = svg.querySelector('#chart-type-name');
+            const description = svg.querySelector('#chart-description');
+            
+            const currentPath = generatePathForChart(currentConfig);
+            const nextPath = generatePathForChart(nextConfig);
+            
+            let startTime = null;
+            const duration = 2000 / animationSpeed;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Ease-in-out cubic function
+                const easeProgress = progress < 0.5
+                    ? 4 * progress * progress * progress
+                    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+                
+                // Morph path (simplified interpolation)
+                const interpolatedPath = interpolatePath(currentPath, nextPath, easeProgress);
+                path.setAttribute('d', interpolatedPath);
+                
+                // Change color
+                const interpolatedColor = interpolateColor(currentConfig.color, nextConfig.color, easeProgress);
+                path.setAttribute('fill', interpolatedColor);
+                path.setAttribute('stroke', interpolatedColor);
+                
+                // Show/hide axes based on chart type
+                if (nextConfig.type === 'pie') {
+                    axesGroup.setAttribute('opacity', 0.3 * (1 - easeProgress));
+                } else {
+                    axesGroup.setAttribute('opacity', 0.3);
+                }
+                
+                // Show/hide data points
+                if (nextConfig.type === 'line' || nextConfig.type === 'area') {
+                    dataPoints.setAttribute('opacity', easeProgress);
+                } else {
+                    dataPoints.setAttribute('opacity', 1 - easeProgress);
+                }
+                
+                // Update text
+                if (easeProgress > 0.5) {
+                    const textProgress = (easeProgress - 0.5) / 0.5;
+                    typeName.textContent = nextConfig.name;
+                    description.textContent = nextConfig.description;
+                    typeName.setAttribute('opacity', textProgress);
+                    description.setAttribute('opacity', textProgress);
+                } else {
+                    const fadeProgress = 1 - (easeProgress / 0.5);
+                    typeName.setAttribute('opacity', fadeProgress);
+                    description.setAttribute('opacity', fadeProgress);
+                }
+                
+                if (progress < 1 && isPlaying) {
+                    requestAnimationFrame(animate);
+                } else {
+                    currentConfigIndex = nextIndex;
+                    
+                    // Update data points for new configuration
+                    svg.querySelector('.data-points').remove();
+                    addDataPoints(svg, nextConfig);
+                    
+                    // Continue to next morph after delay
+                    animationTimeout = setTimeout(() => {
+                        if (isPlaying) {
+                            morphToNextChart();
+                        }
+                    }, 1000 / animationSpeed);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function interpolatePath(path1, path2, progress) {
+            // Simplified path interpolation - in a real implementation, 
+            // you would use a more sophisticated path interpolation library
+            if (progress < 0.5) {
+                return path1;
+            } else {
+                return path2;
+            }
+        }
+
+        function interpolateColor(color1, color2, progress) {
+            // Convert hex to RGB
+            const hex1 = color1.replace('#', '');
+            const hex2 = color2.replace('#', '');
+            
+            const r1 = parseInt(hex1.substr(0, 2), 16);
+            const g1 = parseInt(hex1.substr(2, 2), 16);
+            const b1 = parseInt(hex1.substr(4, 2), 16);
+            
+            const r2 = parseInt(hex2.substr(0, 2), 16);
+            const g2 = parseInt(hex2.substr(2, 2), 16);
+            const b2 = parseInt(hex2.substr(4, 2), 16);
+            
+            // Interpolate
+            const r = Math.round(r1 + (r2 - r1) * progress);
+            const g = Math.round(g1 + (g2 - g1) * progress);
+            const b = Math.round(b1 + (b2 - b1) * progress);
+            
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentConfigIndex = 0;
+            
+            const svg = document.getElementById('morphingChart');
+            const path = svg.querySelector('#morphing-path');
+            const axesGroup = svg.querySelector('.axes-group');
+            const dataPoints = svg.querySelector('.data-points');
+            const typeName = svg.querySelector('#chart-type-name');
+            const description = svg.querySelector('#chart-description');
+            
+            // Reset to first configuration
+            const firstConfig = chartConfigs[0];
+            path.setAttribute('d', generatePathForChart(firstConfig));
+            path.setAttribute('fill', firstConfig.color);
+            path.setAttribute('stroke', firstConfig.color);
+            
+            axesGroup.setAttribute('opacity', '0.3');
+            dataPoints.setAttribute('opacity', '0');
+            
+            typeName.textContent = firstConfig.name;
+            description.textContent = firstConfig.description;
+            typeName.setAttribute('opacity', '1');
+            description.setAttribute('opacity', '1');
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <style>
+        .chart-type-text {
+            fill: #333;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .description-text {
+            fill: #666;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+        }
+        
+        .data-point {
+            transition: all 0.3s ease;
+        }
+        
+        .data-point:hover {
+            r: 7;
+        }
+        
+        #morphing-path {
+            transition: all 0.1s ease;
+        }
+        
+        .axes-group {
+            pointer-events: none;
+        }
+        
+        /* Special effects for morphing */
+        @keyframes shimmer {
+            0% {
+                stroke-dasharray: 0, 100;
+            }
+            50% {
+                stroke-dasharray: 50, 50;
+            }
+            100% {
+                stroke-dasharray: 100, 0;
+            }
+        }
+        
+        .morphing-active {
+            animation: shimmer 2s ease-in-out;
+        }
+    </style>
+</body>
+</html>

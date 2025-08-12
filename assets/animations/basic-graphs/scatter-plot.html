@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>散布図アニメーション - 相関関係分析</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">広告費と売上の相関関係分析</h2>
+        
+        <div class="chart-area">
+            <div class="scatter-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="scatterChart">
+                    <!-- Grid lines and chart elements will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for scatter plot - ad spend vs sales correlation
+        const data = [
+            { adSpend: 50, sales: 120, company: '小売A', color: '#FF6B6B' },
+            { adSpend: 80, sales: 180, company: '小売B', color: '#4ECDC4' },
+            { adSpend: 30, sales: 90, company: '小売C', color: '#45B7D1' },
+            { adSpend: 120, sales: 250, company: '小売D', color: '#96CEB4' },
+            { adSpend: 95, sales: 200, company: '小売E', color: '#FECA57' },
+            { adSpend: 60, sales: 140, company: '小売F', color: '#FF9FF3' },
+            { adSpend: 110, sales: 230, company: '小売G', color: '#54A0FF' },
+            { adSpend: 40, sales: 100, company: '小売H', color: '#5F27CD' },
+            { adSpend: 70, sales: 160, company: '小売I', color: '#FF6B6B' },
+            { adSpend: 100, sales: 210, company: '小売J', color: '#4ECDC4' },
+            { adSpend: 85, sales: 190, company: '小売K', color: '#45B7D1' },
+            { adSpend: 45, sales: 110, company: '小売L', color: '#96CEB4' },
+            { adSpend: 130, sales: 270, company: '小売M', color: '#FECA57' },
+            { adSpend: 75, sales: 170, company: '小売N', color: '#FF9FF3' },
+            { adSpend: 90, sales: 195, company: '小売O', color: '#54A0FF' }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const margin = { top: 40, right: 60, bottom: 80, left: 80 };
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        // Scales
+        const minAdSpend = Math.min(...data.map(d => d.adSpend));
+        const maxAdSpend = Math.max(...data.map(d => d.adSpend));
+        const minSales = Math.min(...data.map(d => d.sales));
+        const maxSales = Math.max(...data.map(d => d.sales));
+        
+        const xScale = (value) => ((value - minAdSpend) / (maxAdSpend - minAdSpend)) * width;
+        const yScale = (value) => height - ((value - minSales) / (maxSales - minSales)) * height;
+
+        function initChart() {
+            const svg = document.getElementById('scatterChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add background grid
+            addGrid(svg);
+            
+            // Add axes
+            addAxes(svg);
+            
+            // Add trend line (regression line)
+            addTrendLine(svg);
+            
+            // Add data points (initially hidden)
+            data.forEach((d, i) => {
+                addDataPoint(svg, d, i);
+            });
+        }
+
+        function addGrid(svg) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'grid');
+            
+            // Horizontal grid lines
+            for (let i = 0; i <= 5; i++) {
+                const y = margin.top + (height / 5) * i;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', margin.left);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', margin.left + width);
+                line.setAttribute('y2', y);
+                line.setAttribute('class', 'grid-line');
+                g.appendChild(line);
+            }
+            
+            // Vertical grid lines
+            for (let i = 0; i <= 5; i++) {
+                const x = margin.left + (width / 5) * i;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x);
+                line.setAttribute('y1', margin.top);
+                line.setAttribute('x2', x);
+                line.setAttribute('y2', margin.top + height);
+                line.setAttribute('class', 'grid-line');
+                g.appendChild(line);
+            }
+            
+            svg.appendChild(g);
+        }
+
+        function addAxes(svg) {
+            // X axis
+            const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            xAxis.setAttribute('x1', margin.left);
+            xAxis.setAttribute('y1', margin.top + height);
+            xAxis.setAttribute('x2', margin.left + width);
+            xAxis.setAttribute('y2', margin.top + height);
+            xAxis.setAttribute('class', 'axis');
+            svg.appendChild(xAxis);
+
+            // Y axis
+            const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            yAxis.setAttribute('x1', margin.left);
+            yAxis.setAttribute('y1', margin.top);
+            yAxis.setAttribute('x2', margin.left);
+            yAxis.setAttribute('y2', margin.top + height);
+            yAxis.setAttribute('class', 'axis');
+            svg.appendChild(yAxis);
+
+            // X axis labels
+            for (let i = 0; i <= 5; i++) {
+                const value = minAdSpend + ((maxAdSpend - minAdSpend) / 5) * i;
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', margin.left + (width / 5) * i);
+                text.setAttribute('y', margin.top + height + 20);
+                text.setAttribute('class', 'axis-label');
+                text.setAttribute('text-anchor', 'middle');
+                text.textContent = Math.round(value) + '万円';
+                svg.appendChild(text);
+            }
+
+            // Y axis labels
+            for (let i = 0; i <= 5; i++) {
+                const value = minSales + ((maxSales - minSales) / 5) * (5 - i);
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', margin.left - 15);
+                text.setAttribute('y', margin.top + (height / 5) * i + 5);
+                text.setAttribute('class', 'axis-label');
+                text.setAttribute('text-anchor', 'end');
+                text.textContent = Math.round(value) + '万円';
+                svg.appendChild(text);
+            }
+
+            // Axis titles
+            const xTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            xTitle.setAttribute('x', margin.left + width / 2);
+            xTitle.setAttribute('y', margin.top + height + 50);
+            xTitle.setAttribute('class', 'label-text');
+            xTitle.setAttribute('text-anchor', 'middle');
+            xTitle.textContent = '広告費 (万円)';
+            svg.appendChild(xTitle);
+
+            const yTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            yTitle.setAttribute('x', 20);
+            yTitle.setAttribute('y', margin.top + height / 2);
+            yTitle.setAttribute('class', 'label-text');
+            yTitle.setAttribute('text-anchor', 'middle');
+            yTitle.setAttribute('transform', `rotate(-90 20 ${margin.top + height / 2})`);
+            yTitle.textContent = '売上 (万円)';
+            svg.appendChild(yTitle);
+        }
+
+        function addTrendLine(svg) {
+            // Calculate simple linear regression
+            const n = data.length;
+            const sumX = data.reduce((sum, d) => sum + d.adSpend, 0);
+            const sumY = data.reduce((sum, d) => sum + d.sales, 0);
+            const sumXY = data.reduce((sum, d) => sum + (d.adSpend * d.sales), 0);
+            const sumXX = data.reduce((sum, d) => sum + (d.adSpend * d.adSpend), 0);
+            
+            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            
+            // Calculate line points
+            const x1 = minAdSpend;
+            const y1 = slope * x1 + intercept;
+            const x2 = maxAdSpend;
+            const y2 = slope * x2 + intercept;
+            
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', margin.left + xScale(x1));
+            line.setAttribute('y1', margin.top + yScale(y1));
+            line.setAttribute('x2', margin.left + xScale(x2));
+            line.setAttribute('y2', margin.top + yScale(y2));
+            line.setAttribute('stroke', '#e74c3c');
+            line.setAttribute('stroke-width', '2');
+            line.setAttribute('stroke-dasharray', '5,5');
+            line.setAttribute('opacity', '0');
+            line.setAttribute('id', 'trendLine');
+            
+            svg.appendChild(line);
+        }
+
+        function addDataPoint(svg, d, index) {
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', margin.left + xScale(d.adSpend));
+            circle.setAttribute('cy', margin.top + yScale(d.sales));
+            circle.setAttribute('r', '6');
+            circle.setAttribute('fill', d.color);
+            circle.setAttribute('stroke', 'white');
+            circle.setAttribute('stroke-width', '2');
+            circle.setAttribute('class', 'scatter-point');
+            circle.setAttribute('opacity', '0');
+            
+            // Add hover events
+            circle.addEventListener('mouseenter', (e) => showTooltip(e, d));
+            circle.addEventListener('mouseleave', hideTooltip);
+            
+            svg.appendChild(circle);
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            currentStep = 0;
+            animatePoints();
+        }
+
+        function animatePoints() {
+            if (currentStep >= data.length || !isPlaying) {
+                // Show trend line after all points are shown
+                if (isPlaying) {
+                    showTrendLine();
+                }
+                return;
+            }
+            
+            const svg = document.getElementById('scatterChart');
+            const points = svg.querySelectorAll('.scatter-point');
+            const point = points[currentStep];
+            
+            // Animate point appearance with bounce effect
+            let startTime = null;
+            const duration = 300 / animationSpeed;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Bounce easing function
+                let easeProgress;
+                if (progress < 0.5) {
+                    easeProgress = 4 * progress * progress * progress;
+                } else {
+                    easeProgress = 1 - Math.pow(-2 * progress + 2, 3) / 2;
+                }
+                
+                point.setAttribute('opacity', easeProgress * 0.8);
+                
+                // Scale effect
+                const scale = 0.3 + (0.7 * easeProgress);
+                point.setAttribute('r', 6 * scale);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Move to next point
+                    currentStep++;
+                    animationTimeout = setTimeout(() => {
+                        animatePoints();
+                    }, 100 / animationSpeed);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function showTrendLine() {
+            const trendLine = document.getElementById('trendLine');
+            if (!trendLine) return;
+            
+            let startTime = null;
+            const duration = 1000 / animationSpeed;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                trendLine.setAttribute('opacity', progress * 0.7);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    isPlaying = false;
+                    document.getElementById('playBtn').style.opacity = '1';
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('scatterChart');
+            const points = svg.querySelectorAll('.scatter-point');
+            const trendLine = document.getElementById('trendLine');
+            
+            // Reset points
+            points.forEach(point => {
+                point.setAttribute('opacity', '0');
+                point.setAttribute('r', '6');
+            });
+            
+            // Reset trend line
+            if (trendLine) {
+                trendLine.setAttribute('opacity', '0');
+            }
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, data) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${data.company}</strong><br>
+                広告費: ${data.adSpend}万円<br>
+                売上: ${data.sales}万円
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>インフォグラフィックアニメーション学習ツール - Phase 4</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1 class="header__title">インフォグラフィックアニメーション学習ツール</h1>
+        <div class="header__controls">
+            <!-- Progress Display -->
+            <div class="progress-display">
+                <div class="progress-info">
+                    <span>学習進捗: </span>
+                    <span id="progress-text">0/30 (0%)</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-bg">
+                        <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- View Toggle -->
+            <div class="view-controls">
+                <button id="grid-toggle" class="view-toggle-btn" title="グリッド表示">
+                    <span class="grid-icon">▦</span>
+                </button>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="stats-display">
+                <div class="stat-item">
+                    <span class="stat-label">閲覧済み:</span>
+                    <span id="viewed-count" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">お気に入り:</span>
+                    <span id="favorite-count" class="stat-value">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar Menu -->
+        <aside class="sidebar">
+            <!-- Enhanced Search Section -->
+            <div class="search-section">
+                <!-- Main Search Box -->
+                <div class="search-box">
+                    <div class="search-input-container">
+                        <input type="text" id="search-input" placeholder="キーワードを入力..." class="search-input">
+                        <button id="clear-search" class="clear-search-btn" aria-label="クリア">×</button>
+                    </div>
+                    
+                    <!-- Search Suggestions -->
+                    <div id="search-suggestions" class="search-suggestions hidden">
+                        <div class="suggestions-header">検索候補</div>
+                        <ul id="suggestions-list" class="suggestions-list"></ul>
+                    </div>
+                    
+                    <!-- Search History -->
+                    <div id="search-history" class="search-history hidden">
+                        <div class="history-header">
+                            <span>検索履歴</span>
+                            <button id="clear-history" class="clear-history-btn">履歴をクリア</button>
+                        </div>
+                        <ul id="history-list" class="history-list"></ul>
+                    </div>
+                </div>
+                
+                <!-- Advanced Search Toggle -->
+                <button id="advanced-search-toggle" class="advanced-search-toggle">
+                    <span class="toggle-text">詳細検索</span>
+                    <span class="toggle-icon">▼</span>
+                </button>
+                
+                <!-- Advanced Search Panel -->
+                <div id="advanced-search-panel" class="advanced-search-panel hidden">
+                    <!-- Category Filters -->
+                    <div class="filter-group">
+                        <label class="filter-label">カテゴリ</label>
+                        <div class="filter-options">
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="基本グラフ" name="category">
+                                <span class="checkmark"></span>
+                                基本グラフ
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="表現テクニック" name="category">
+                                <span class="checkmark"></span>
+                                表現テクニック
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="用途・シーン別" name="category">
+                                <span class="checkmark"></span>
+                                用途・シーン別
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Difficulty Filter -->
+                    <div class="filter-group">
+                        <label class="filter-label">難易度</label>
+                        <div class="filter-options">
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="初級" name="difficulty">
+                                <span class="checkmark"></span>
+                                初級
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="中級" name="difficulty">
+                                <span class="checkmark"></span>
+                                中級
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="上級" name="difficulty">
+                                <span class="checkmark"></span>
+                                上級
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Duration Filter -->
+                    <div class="filter-group">
+                        <label class="filter-label">時間</label>
+                        <div class="filter-options">
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="短時間" name="duration">
+                                <span class="checkmark"></span>
+                                短時間
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="中時間" name="duration">
+                                <span class="checkmark"></span>
+                                中時間
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="長時間" name="duration">
+                                <span class="checkmark"></span>
+                                長時間
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Use Cases Filter -->
+                    <div class="filter-group">
+                        <label class="filter-label">用途</label>
+                        <div class="filter-options">
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="ビジネス" name="use_cases">
+                                <span class="checkmark"></span>
+                                ビジネス
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="教育" name="use_cases">
+                                <span class="checkmark"></span>
+                                教育
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="マーケティング" name="use_cases">
+                                <span class="checkmark"></span>
+                                マーケティング
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="プレゼンテーション" name="use_cases">
+                                <span class="checkmark"></span>
+                                プレゼンテーション
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Actions -->
+                    <div class="filter-actions">
+                        <button id="apply-filters" class="apply-filters-btn">フィルターを適用</button>
+                        <button id="reset-filters" class="reset-filters-btn">リセット</button>
+                    </div>
+                </div>
+                
+                <!-- Search Results Summary -->
+                <div id="search-results-summary" class="search-results-summary hidden">
+                    <div class="results-info">
+                        <span id="results-count">0</span>件の結果
+                    </div>
+                    <div class="sort-options">
+                        <label for="sort-select">並び順:</label>
+                        <select id="sort-select" class="sort-select">
+                            <option value="relevance">関連度順</option>
+                            <option value="category">カテゴリ順</option>
+                            <option value="difficulty">難易度順</option>
+                            <option value="title">タイトル順</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Popular Searches -->
+                <div id="popular-searches" class="popular-searches">
+                    <div class="popular-header">人気の検索ワード</div>
+                    <div class="popular-tags">
+                        <button class="popular-tag" data-search="グラフ">グラフ</button>
+                        <button class="popular-tag" data-search="アニメーション">アニメーション</button>
+                        <button class="popular-tag" data-search="ビジネス">ビジネス</button>
+                        <button class="popular-tag" data-search="プレゼン">プレゼン</button>
+                        <button class="popular-tag" data-search="売上">売上</button>
+                        <button class="popular-tag" data-search="進捗">進捗</button>
+                        <button class="popular-tag" data-search="分析">分析</button>
+                        <button class="popular-tag" data-search="ROI">ROI</button>
+                    </div>
+                </div>
+                
+                <!-- Difficulty Filter -->
+                <div class="difficulty-filter">
+                    <div class="filter-header">難易度で絞り込み</div>
+                    <div class="difficulty-buttons">
+                        <button class="difficulty-filter-btn active" data-difficulty="all">すべて</button>
+                        <button class="difficulty-filter-btn" data-difficulty="初級">初級</button>
+                        <button class="difficulty-filter-btn" data-difficulty="中級">中級</button>
+                        <button class="difficulty-filter-btn" data-difficulty="上級">上級</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Navigation -->
+            <nav class="category-nav">
+                <!-- 基本グラフ -->
+                <div class="category-group">
+                    <button class="category-header" data-category="basic-graphs">
+                        <span>基本グラフ</span>
+                        <span class="category-icon">▼</span>
+                    </button>
+                    <ul class="category-list" id="basic-graphs">
+                        <li><button class="category-item" data-id="001">棒グラフ - 年度別売上推移</button></li>
+                        <li><button class="category-item" data-id="002">折れ線グラフ - 株価変動トレンド</button></li>
+                        <li><button class="category-item" data-id="003">円グラフ - 市場シェア分析</button></li>
+                        <li><button class="category-item" data-id="004">面グラフ - 累積売上推移</button></li>
+                        <li><button class="category-item" data-id="013">散布図 - 相関分析</button></li>
+                        <li><button class="category-item" data-id="014">バブルチャート - ポートフォリオ分析</button></li>
+                        <li><button class="category-item" data-id="015">レーダーチャート - スキル評価</button></li>
+                        <li><button class="category-item" data-id="016">ヒートマップ - ウェブ利用状況</button></li>
+                        <li><button class="category-item" data-id="017">ウォーターフォールチャート - 予算分析</button></li>
+                        <li><button class="category-item" data-id="018">ピクトグラム - 人口統計</button></li>
+                    </ul>
+                </div>
+
+                <!-- 表現テクニック -->
+                <div class="category-group">
+                    <button class="category-header" data-category="techniques">
+                        <span>表現テクニック</span>
+                        <span class="category-icon">▼</span>
+                    </button>
+                    <ul class="category-list" id="techniques">
+                        <li><button class="category-item" data-id="005">カウンター - 数値カウントアップ</button></li>
+                        <li><button class="category-item" data-id="006">ゲージ - 進捗率表示</button></li>
+                        <li><button class="category-item" data-id="007">タイムライン - プロジェクト進捗</button></li>
+                        <li><button class="category-item" data-id="008">フローチャート - 業務プロセス</button></li>
+                        <li><button class="category-item" data-id="019">マップアニメーション - 地域別売上</button></li>
+                        <li><button class="category-item" data-id="020">ツリーマップ - 予算配分</button></li>
+                        <li><button class="category-item" data-id="021">サンバーストチャート - 組織構造</button></li>
+                        <li><button class="category-item" data-id="022">モーフィング - グラフ変化</button></li>
+                        <li><button class="category-item" data-id="023">パーティクルエフェクト - データ流動</button></li>
+                        <li><button class="category-item" data-id="024">インタラクティブダッシュボード</button></li>
+                    </ul>
+                </div>
+
+                <!-- 用途・シーン別 -->
+                <div class="category-group">
+                    <button class="category-header" data-category="usage">
+                        <span>用途・シーン別</span>
+                        <span class="category-icon">▼</span>
+                    </button>
+                    <ul class="category-list" id="usage">
+                        <li><button class="category-item" data-id="009">ビジネスレポート - 四半期業績報告</button></li>
+                        <li><button class="category-item" data-id="010">製品解説 - 機能紹介</button></li>
+                        <li><button class="category-item" data-id="011">教育キャンペーン - 環境保護意識</button></li>
+                        <li><button class="category-item" data-id="012">企業沿革 - 50周年記念</button></li>
+                        <li><button class="category-item" data-id="025">市場分析レポート - 競合他社比較</button></li>
+                        <li><button class="category-item" data-id="026">年次売上報告 - 業績総括</button></li>
+                        <li><button class="category-item" data-id="027">顧客満足度調査 - 体験分析</button></li>
+                        <li><button class="category-item" data-id="028">プロジェクト進捗管理 - 大規模開発</button></li>
+                        <li><button class="category-item" data-id="029">競合他社比較 - ポジション分析</button></li>
+                        <li><button class="category-item" data-id="030">ROI分析表示 - 投資収益率</button></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Content Area -->
+        <main class="content">
+            <div class="content__wrapper">
+                <!-- Welcome Message -->
+                <div id="welcome-message" class="welcome-message">
+                    <h2>インフォグラフィックアニメーション学習ツールへようこそ</h2>
+                    <p>左側のカテゴリから学習したいアニメーション手法を選択してください。</p>
+                    <div class="welcome-stats">
+                        <div class="welcome-stat">
+                            <div class="stat-number">30</div>
+                            <div class="stat-label">学習コンテンツ</div>
+                        </div>
+                        <div class="welcome-stat">
+                            <div class="stat-number">10</div>
+                            <div class="stat-label">基本グラフ</div>
+                        </div>
+                        <div class="welcome-stat">
+                            <div class="stat-number">10</div>
+                            <div class="stat-label">表現テクニック</div>
+                        </div>
+                        <div class="welcome-stat">
+                            <div class="stat-number">10</div>
+                            <div class="stat-label">用途シーン</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Display -->
+                <div id="content-display" class="content-display hidden">
+                    <!-- Content Title -->
+                    <div class="content-header">
+                        <div class="content-title-group">
+                            <h2 id="content-title" class="content-title"></h2>
+                            <button id="favorite-detail-btn" class="favorite-btn detail-favorite" title="お気に入りに追加">
+                                <span class="favorite-icon">☆</span>
+                            </button>
+                        </div>
+                        <div class="content-meta">
+                            <div id="content-category" class="content-category"></div>
+                            <div class="content-badges">
+                                <span id="content-difficulty" class="difficulty-badge"></span>
+                                <span id="content-duration" class="duration-badge"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Animation Display -->
+                    <div class="animation-container">
+                        <!-- Video Player -->
+                        <div class="video-player" id="video-player">
+                            <video id="video-element" class="video-element" preload="metadata">
+                                <source src="" type="video/mp4">
+                                お使いのブラウザは動画タグに対応していません。
+                            </video>
+                            
+                            <!-- Video Controls -->
+                            <div class="video-controls" id="video-controls">
+                                <!-- Progress Bar -->
+                                <div class="progress-container">
+                                    <div class="progress-bar" id="progress-bar">
+                                        <div class="progress-fill" id="progress-fill"></div>
+                                        <div class="progress-handle" id="progress-handle"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Control Buttons -->
+                                <div class="controls-bottom">
+                                    <div class="controls-left">
+                                        <button class="control-btn" id="play-pause-btn" aria-label="再生/停止">
+                                            <span class="play-icon">▶</span>
+                                        </button>
+                                        
+                                        <button class="control-btn" id="repeat-btn" aria-label="リピート切り替え">
+                                            <span class="repeat-icon">🔄</span>
+                                        </button>
+                                        
+                                        <div class="speed-controls">
+                                            <button class="speed-btn" data-speed="0.5">0.5x</button>
+                                            <button class="speed-btn active" data-speed="1">1x</button>
+                                            <button class="speed-btn" data-speed="1.5">1.5x</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="controls-right">
+                                        <div class="time-display">
+                                            <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Fallback placeholder (shown when no video) -->
+                        <div class="video-placeholder hidden" id="video-placeholder">
+                            <div class="video-placeholder__content">
+                                <div class="play-icon">▶</div>
+                                <p>アニメーション再生エリア</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Details -->
+                    <div class="content-details">
+                        <!-- Description -->
+                        <section class="detail-section">
+                            <h3 class="detail-title">解説</h3>
+                            <p id="content-description" class="detail-content"></p>
+                        </section>
+
+                        <!-- Expression Points -->
+                        <section class="detail-section">
+                            <h3 class="detail-title">表現のポイント</h3>
+                            <ul id="content-points" class="detail-list"></ul>
+                        </section>
+
+                        <!-- Main Usage -->
+                        <section class="detail-section">
+                            <h3 class="detail-title">主な用途</h3>
+                            <p id="content-usage" class="detail-content"></p>
+                        </section>
+
+                        <!-- Learning Objectives -->
+                        <section class="detail-section">
+                            <h3 class="detail-title">学習目標</h3>
+                            <ul id="learning-objectives" class="detail-list"></ul>
+                        </section>
+
+                        <!-- Tags -->
+                        <section class="detail-section">
+                            <h3 class="detail-title">タグ</h3>
+                            <div id="content-tags" class="content-tags"></div>
+                        </section>
+
+                        <!-- Related Content -->
+                        <section class="detail-section">
+                            <h3 class="detail-title">関連コンテンツ</h3>
+                            <div id="related-content-list" class="related-content-list"></div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Grid View -->
+        <div id="content-grid" class="content-grid hidden">
+            <div class="grid-header">
+                <h2>コンテンツ一覧</h2>
+                <p>30の学習コンテンツから選択してください</p>
+            </div>
+            <div id="grid-items" class="grid-items"></div>
+        </div>
+    </div>
+
+    <script src="script-working.js"></script>
+</body>
+</html>

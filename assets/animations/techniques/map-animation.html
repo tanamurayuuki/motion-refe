@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マップアニメーション - 地域別売上分布</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">地域別売上分布</h2>
+        
+        <div class="chart-area">
+            <div class="map-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="mapChart">
+                    <!-- Map regions and data points will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simplified Japan map data (regions)
+        const japanRegions = [
+            { name: '北海道', center: [150, 80], sales: 120, color: '#FF6B6B', path: 'M130,70 L170,70 L180,90 L170,110 L130,110 Z' },
+            { name: '東北', center: [200, 120], sales: 180, color: '#4ECDC4', path: 'M180,100 L220,100 L225,140 L185,140 Z' },
+            { name: '関東', center: [250, 160], sales: 350, color: '#45B7D1', path: 'M230,140 L270,140 L275,180 L235,180 Z' },
+            { name: '中部', center: [200, 180], sales: 220, color: '#96CEB4', path: 'M180,160 L220,160 L225,200 L185,200 Z' },
+            { name: '関西', center: [180, 220], sales: 280, color: '#FECA57', path: 'M160,200 L200,200 L205,240 L165,240 Z' },
+            { name: '中国', center: [140, 240], sales: 150, color: '#FF9FF3', path: 'M120,220 L160,220 L165,260 L125,260 Z' },
+            { name: '四国', center: [160, 280], sales: 80, color: '#54A0FF', path: 'M140,260 L180,260 L185,300 L145,300 Z' },
+            { name: '九州', center: [110, 280], sales: 200, color: '#5F27CD', path: 'M90,260 L130,260 L135,320 L95,320 Z' }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const width = 800;
+        const height = 400;
+        const maxSales = Math.max(...japanRegions.map(r => r.sales));
+
+        function initChart() {
+            const svg = document.getElementById('mapChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add map background
+            addMapBackground(svg);
+            
+            // Add regions (initially hidden)
+            japanRegions.forEach((region, i) => {
+                addMapRegion(svg, region, i);
+            });
+            
+            // Add legend
+            addMapLegend(svg);
+        }
+
+        function addMapBackground(svg) {
+            // Ocean background
+            const ocean = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            ocean.setAttribute('width', width);
+            ocean.setAttribute('height', height);
+            ocean.setAttribute('fill', '#E3F2FD');
+            ocean.setAttribute('opacity', '0.3');
+            svg.appendChild(ocean);
+            
+            // Grid lines for reference
+            const grid = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            grid.setAttribute('class', 'map-grid');
+            
+            // Vertical grid lines
+            for (let x = 50; x < width; x += 50) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x);
+                line.setAttribute('y1', 0);
+                line.setAttribute('x2', x);
+                line.setAttribute('y2', height);
+                line.setAttribute('stroke', '#E0E0E0');
+                line.setAttribute('stroke-width', '1');
+                line.setAttribute('opacity', '0.3');
+                grid.appendChild(line);
+            }
+            
+            // Horizontal grid lines
+            for (let y = 50; y < height; y += 50) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', 0);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', width);
+                line.setAttribute('y2', y);
+                line.setAttribute('stroke', '#E0E0E0');
+                line.setAttribute('stroke-width', '1');
+                line.setAttribute('opacity', '0.3');
+                grid.appendChild(line);
+            }
+            
+            svg.appendChild(grid);
+        }
+
+        function addMapRegion(svg, region, index) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'map-region');
+            g.setAttribute('data-index', index);
+            
+            // Region shape
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', region.path);
+            path.setAttribute('fill', region.color);
+            path.setAttribute('stroke', '#fff');
+            path.setAttribute('stroke-width', '2');
+            path.setAttribute('opacity', '0');
+            path.setAttribute('class', 'region-shape');
+            g.appendChild(path);
+            
+            // Sales data circle (size based on sales)
+            const salesRadius = (region.sales / maxSales) * 20 + 5;
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', region.center[0]);
+            circle.setAttribute('cy', region.center[1]);
+            circle.setAttribute('r', '0'); // Start with 0 radius
+            circle.setAttribute('fill', region.color);
+            circle.setAttribute('stroke', '#fff');
+            circle.setAttribute('stroke-width', '3');
+            circle.setAttribute('opacity', '0');
+            circle.setAttribute('class', 'sales-circle');
+            circle.setAttribute('data-target-radius', salesRadius);
+            g.appendChild(circle);
+            
+            // Region label
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', region.center[0]);
+            text.setAttribute('y', region.center[1] - salesRadius - 10);
+            text.setAttribute('class', 'region-label');
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('opacity', '0');
+            text.textContent = region.name;
+            g.appendChild(text);
+            
+            // Sales value label
+            const valueText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            valueText.setAttribute('x', region.center[0]);
+            valueText.setAttribute('y', region.center[1] + 5);
+            valueText.setAttribute('class', 'sales-label');
+            valueText.setAttribute('text-anchor', 'middle');
+            valueText.setAttribute('opacity', '0');
+            valueText.textContent = region.sales + '万円';
+            g.appendChild(valueText);
+            
+            // Add hover events
+            g.addEventListener('mouseenter', (e) => showTooltip(e, region));
+            g.addEventListener('mouseleave', hideTooltip);
+            
+            svg.appendChild(g);
+            
+            // Add pulsing animation effect
+            addPulseEffect(svg, region.center, region.color, index);
+        }
+
+        function addPulseEffect(svg, center, color, index) {
+            const pulseCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            pulseCircle.setAttribute('cx', center[0]);
+            pulseCircle.setAttribute('cy', center[1]);
+            pulseCircle.setAttribute('r', '5');
+            pulseCircle.setAttribute('fill', 'none');
+            pulseCircle.setAttribute('stroke', color);
+            pulseCircle.setAttribute('stroke-width', '2');
+            pulseCircle.setAttribute('opacity', '0');
+            pulseCircle.setAttribute('class', 'pulse-effect');
+            pulseCircle.setAttribute('data-index', index);
+            
+            svg.appendChild(pulseCircle);
+        }
+
+        function addMapLegend(svg) {
+            const legendX = 500;
+            const legendY = 50;
+            
+            // Legend background
+            const legendBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            legendBg.setAttribute('x', legendX - 10);
+            legendBg.setAttribute('y', legendY - 10);
+            legendBg.setAttribute('width', 250);
+            legendBg.setAttribute('height', 120);
+            legendBg.setAttribute('fill', 'white');
+            legendBg.setAttribute('stroke', '#ccc');
+            legendBg.setAttribute('stroke-width', '1');
+            legendBg.setAttribute('opacity', '0.9');
+            svg.appendChild(legendBg);
+            
+            // Legend title
+            const legendTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            legendTitle.setAttribute('x', legendX);
+            legendTitle.setAttribute('y', legendY + 15);
+            legendTitle.setAttribute('class', 'legend-title');
+            legendTitle.textContent = '地域別売上高';
+            svg.appendChild(legendTitle);
+            
+            // Size legend
+            const sizes = [
+                { radius: 10, value: 100 },
+                { radius: 15, value: 200 },
+                { radius: 20, value: 300 },
+                { radius: 25, value: 400 }
+            ];
+            
+            sizes.forEach((size, i) => {
+                const y = legendY + 35 + i * 15;
+                
+                // Sample circle
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', legendX + 15);
+                circle.setAttribute('cy', y);
+                circle.setAttribute('r', size.radius / 2);
+                circle.setAttribute('fill', '#999');
+                circle.setAttribute('opacity', '0.6');
+                svg.appendChild(circle);
+                
+                // Size label
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', legendX + 35);
+                label.setAttribute('y', y + 4);
+                label.setAttribute('class', 'legend-text');
+                label.textContent = size.value + '万円';
+                svg.appendChild(label);
+            });
+            
+            // Note
+            const note = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            note.setAttribute('x', legendX);
+            note.setAttribute('y', legendY + 105);
+            note.setAttribute('class', 'legend-note');
+            note.textContent = '円の大きさが売上高を表します';
+            svg.appendChild(note);
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateRegions();
+        }
+
+        function animateRegions() {
+            const svg = document.getElementById('mapChart');
+            const regions = svg.querySelectorAll('.map-region');
+            const pulseEffects = svg.querySelectorAll('.pulse-effect');
+            
+            let regionIndex = 0;
+            
+            function animateNextRegion() {
+                if (regionIndex >= japanRegions.length || !isPlaying) {
+                    isPlaying = false;
+                    document.getElementById('playBtn').style.opacity = '1';
+                    return;
+                }
+                
+                const region = regions[regionIndex];
+                const regionData = japanRegions[regionIndex];
+                const regionShape = region.querySelector('.region-shape');
+                const salesCircle = region.querySelector('.sales-circle');
+                const regionLabel = region.querySelector('.region-label');
+                const salesLabel = region.querySelector('.sales-label');
+                const pulseEffect = pulseEffects[regionIndex];
+                
+                const targetRadius = parseFloat(salesCircle.getAttribute('data-target-radius'));
+                
+                let startTime = null;
+                const duration = 1000 / animationSpeed;
+                
+                function animate(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    
+                    // Ease-out cubic function
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+                    
+                    // Animate region shape
+                    regionShape.setAttribute('opacity', easeProgress * 0.7);
+                    
+                    // Animate sales circle
+                    salesCircle.setAttribute('opacity', easeProgress * 0.9);
+                    salesCircle.setAttribute('r', targetRadius * easeProgress);
+                    
+                    // Animate labels
+                    if (easeProgress > 0.5) {
+                        const labelProgress = (easeProgress - 0.5) / 0.5;
+                        regionLabel.setAttribute('opacity', labelProgress);
+                        salesLabel.setAttribute('opacity', labelProgress);
+                    }
+                    
+                    // Pulse effect
+                    if (easeProgress > 0.8) {
+                        pulseEffect.setAttribute('opacity', (easeProgress - 0.8) / 0.2 * 0.6);
+                        startPulseAnimation(pulseEffect);
+                    }
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        regionIndex++;
+                        // Small delay between regions
+                        setTimeout(() => {
+                            animateNextRegion();
+                        }, 300 / animationSpeed);
+                    }
+                }
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animateNextRegion();
+        }
+
+        function startPulseAnimation(pulseElement) {
+            let pulseStartTime = null;
+            const pulseDuration = 1500;
+            
+            function pulse(timestamp) {
+                if (!pulseStartTime) pulseStartTime = timestamp;
+                const pulseProgress = ((timestamp - pulseStartTime) % pulseDuration) / pulseDuration;
+                
+                // Pulse animation
+                const scale = 1 + Math.sin(pulseProgress * Math.PI * 2) * 0.3;
+                const opacity = 0.6 - pulseProgress * 0.6;
+                
+                pulseElement.setAttribute('r', 5 * scale);
+                pulseElement.setAttribute('opacity', Math.max(0, opacity));
+                
+                if (isPlaying) {
+                    requestAnimationFrame(pulse);
+                }
+            }
+            
+            requestAnimationFrame(pulse);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('mapChart');
+            const regionShapes = svg.querySelectorAll('.region-shape');
+            const salesCircles = svg.querySelectorAll('.sales-circle');
+            const regionLabels = svg.querySelectorAll('.region-label');
+            const salesLabels = svg.querySelectorAll('.sales-label');
+            const pulseEffects = svg.querySelectorAll('.pulse-effect');
+            
+            regionShapes.forEach(shape => {
+                shape.setAttribute('opacity', '0');
+            });
+            
+            salesCircles.forEach(circle => {
+                circle.setAttribute('opacity', '0');
+                circle.setAttribute('r', '0');
+            });
+            
+            regionLabels.forEach(label => {
+                label.setAttribute('opacity', '0');
+            });
+            
+            salesLabels.forEach(label => {
+                label.setAttribute('opacity', '0');
+            });
+            
+            pulseEffects.forEach(effect => {
+                effect.setAttribute('opacity', '0');
+                effect.setAttribute('r', '5');
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, region) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${region.name}</strong><br>
+                売上高: ${region.sales}万円<br>
+                全体の${Math.round(region.sales / maxSales * 100)}%
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <style>
+        .map-region {
+            cursor: pointer;
+        }
+        
+        .region-shape {
+            transition: all 0.3s ease;
+        }
+        
+        .region-shape:hover {
+            opacity: 0.9 !important;
+            stroke-width: 3;
+        }
+        
+        .sales-circle {
+            transition: all 0.3s ease;
+        }
+        
+        .region-label {
+            fill: #333;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .sales-label {
+            fill: #333;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .legend-title {
+            fill: #333;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .legend-text {
+            fill: #666;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .legend-note {
+            fill: #999;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+        }
+        
+        .pulse-effect {
+            pointer-events: none;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                r: 5;
+                opacity: 0.8;
+            }
+            50% {
+                r: 15;
+                opacity: 0.4;
+            }
+            100% {
+                r: 25;
+                opacity: 0;
+            }
+        }
+    </style>
+</body>
+</html>

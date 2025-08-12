@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>レーダーチャートアニメーション - 従業員スキル評価</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">従業員スキル評価</h2>
+        
+        <div class="chart-area">
+            <div class="radar-chart-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="radarChart">
+                    <!-- Radar grid and axes will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for radar chart
+        const skills = [
+            { name: 'コミュニケーション', maxScore: 100 },
+            { name: 'リーダーシップ', maxScore: 100 },
+            { name: '技術力', maxScore: 100 },
+            { name: '創造性', maxScore: 100 },
+            { name: '問題解決力', maxScore: 100 },
+            { name: 'チームワーク', maxScore: 100 }
+        ];
+
+        const employees = [
+            {
+                name: '田中さん',
+                scores: [85, 70, 90, 75, 80, 95],
+                color: '#FF6B6B'
+            },
+            {
+                name: '佐藤さん',
+                scores: [75, 85, 80, 90, 70, 85],
+                color: '#4ECDC4'
+            },
+            {
+                name: '山田さん',
+                scores: [90, 75, 85, 80, 85, 80],
+                color: '#45B7D1'
+            }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const centerX = 400;
+        const centerY = 200;
+        const maxRadius = 120;
+        const levels = 5;
+
+        function initChart() {
+            const svg = document.getElementById('radarChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add radar grid
+            addRadarGrid(svg);
+            
+            // Add axes
+            addRadarAxes(svg);
+            
+            // Add employee data (initially hidden)
+            employees.forEach((emp, i) => {
+                addEmployeeRadar(svg, emp, i);
+            });
+            
+            // Add legend
+            addLegend(svg);
+        }
+
+        function addRadarGrid(svg) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'radar-grid');
+            
+            // Add concentric circles for levels
+            for (let level = 1; level <= levels; level++) {
+                const radius = (maxRadius / levels) * level;
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', centerX);
+                circle.setAttribute('cy', centerY);
+                circle.setAttribute('r', radius);
+                circle.setAttribute('fill', 'none');
+                circle.setAttribute('stroke', '#e0e0e0');
+                circle.setAttribute('stroke-width', '1');
+                circle.setAttribute('opacity', '0.5');
+                g.appendChild(circle);
+                
+                // Add level labels
+                if (level < levels) {
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', centerX + radius + 5);
+                    text.setAttribute('y', centerY + 5);
+                    text.setAttribute('class', 'level-label');
+                    text.textContent = (100 / levels * level);
+                    g.appendChild(text);
+                }
+            }
+            
+            svg.appendChild(g);
+        }
+
+        function addRadarAxes(svg) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'radar-axes');
+            
+            skills.forEach((skill, i) => {
+                const angle = (i * 2 * Math.PI / skills.length) - Math.PI / 2;
+                const endX = centerX + Math.cos(angle) * maxRadius;
+                const endY = centerY + Math.sin(angle) * maxRadius;
+                
+                // Axis line
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', centerX);
+                line.setAttribute('y1', centerY);
+                line.setAttribute('x2', endX);
+                line.setAttribute('y2', endY);
+                line.setAttribute('stroke', '#333');
+                line.setAttribute('stroke-width', '2');
+                g.appendChild(line);
+                
+                // Skill label
+                const labelX = centerX + Math.cos(angle) * (maxRadius + 30);
+                const labelY = centerY + Math.sin(angle) * (maxRadius + 30);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', labelX);
+                text.setAttribute('y', labelY);
+                text.setAttribute('class', 'skill-label');
+                text.setAttribute('text-anchor', 'middle');
+                text.textContent = skill.name;
+                g.appendChild(text);
+            });
+            
+            svg.appendChild(g);
+        }
+
+        function addEmployeeRadar(svg, employee, index) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'employee-radar');
+            g.setAttribute('data-index', index);
+            
+            // Create path for radar shape
+            let pathData = '';
+            
+            employee.scores.forEach((score, i) => {
+                const angle = (i * 2 * Math.PI / skills.length) - Math.PI / 2;
+                const radius = (score / 100) * maxRadius;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                
+                if (i === 0) {
+                    pathData += `M ${x} ${y}`;
+                } else {
+                    pathData += ` L ${x} ${y}`;
+                }
+            });
+            
+            pathData += ' Z';
+            
+            // Radar area
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', pathData);
+            path.setAttribute('fill', employee.color);
+            path.setAttribute('fill-opacity', '0.3');
+            path.setAttribute('stroke', employee.color);
+            path.setAttribute('stroke-width', '3');
+            path.setAttribute('opacity', '0');
+            path.setAttribute('class', 'radar-path');
+            g.appendChild(path);
+            
+            // Data points
+            employee.scores.forEach((score, i) => {
+                const angle = (i * 2 * Math.PI / skills.length) - Math.PI / 2;
+                const radius = (score / 100) * maxRadius;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', x);
+                circle.setAttribute('cy', y);
+                circle.setAttribute('r', '5');
+                circle.setAttribute('fill', employee.color);
+                circle.setAttribute('stroke', 'white');
+                circle.setAttribute('stroke-width', '2');
+                circle.setAttribute('opacity', '0');
+                circle.setAttribute('class', 'radar-point');
+                
+                // Add hover events
+                circle.addEventListener('mouseenter', (e) => showTooltip(e, employee, skills[i], score));
+                circle.addEventListener('mouseleave', hideTooltip);
+                
+                g.appendChild(circle);
+            });
+            
+            svg.appendChild(g);
+        }
+
+        function addLegend(svg) {
+            employees.forEach((emp, i) => {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'legend-item');
+                
+                // Legend circle
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', 50);
+                circle.setAttribute('cy', 50 + i * 25);
+                circle.setAttribute('r', 8);
+                circle.setAttribute('fill', emp.color);
+                g.appendChild(circle);
+                
+                // Legend text
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', 70);
+                text.setAttribute('y', 55 + i * 25);
+                text.setAttribute('class', 'legend-text');
+                text.textContent = emp.name;
+                g.appendChild(text);
+                
+                svg.appendChild(g);
+            });
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateRadar(0);
+        }
+
+        function animateRadar(employeeIndex) {
+            if (employeeIndex >= employees.length || !isPlaying) {
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+                return;
+            }
+            
+            const svg = document.getElementById('radarChart');
+            const employeeGroup = svg.querySelector(`.employee-radar[data-index="${employeeIndex}"]`);
+            const path = employeeGroup.querySelector('.radar-path');
+            const points = employeeGroup.querySelectorAll('.radar-point');
+            
+            let startTime = null;
+            const duration = 1500 / animationSpeed;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Ease-out cubic function
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                // Animate radar path
+                path.setAttribute('opacity', easeProgress);
+                
+                // Animate points with staggered timing
+                points.forEach((point, i) => {
+                    const pointDelay = i * 0.1;
+                    const pointProgress = Math.max(0, Math.min(1, (easeProgress - pointDelay) / (1 - pointDelay)));
+                    
+                    if (pointProgress > 0) {
+                        point.setAttribute('opacity', pointProgress);
+                        
+                        // Scale animation
+                        const scale = 0.5 + 0.5 * pointProgress;
+                        point.style.transform = `scale(${scale})`;
+                        point.style.transformOrigin = 'center';
+                    }
+                });
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Move to next employee after delay
+                    animationTimeout = setTimeout(() => {
+                        animateRadar(employeeIndex + 1);
+                    }, 300 / animationSpeed);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('radarChart');
+            const paths = svg.querySelectorAll('.radar-path');
+            const points = svg.querySelectorAll('.radar-point');
+            
+            paths.forEach(path => {
+                path.setAttribute('opacity', '0');
+            });
+            
+            points.forEach(point => {
+                point.setAttribute('opacity', '0');
+                point.style.transform = 'scale(0.5)';
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, employee, skill, score) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${employee.name}</strong><br>
+                ${skill.name}: ${score}点
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <style>
+        .radar-grid {
+            opacity: 0.7;
+        }
+        
+        .level-label {
+            fill: #666;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .skill-label {
+            fill: #333;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .radar-path {
+            transition: all 0.3s ease;
+        }
+        
+        .radar-point {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .radar-point:hover {
+            r: 7;
+        }
+        
+        .legend-text {
+            fill: #333;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .employee-radar {
+            cursor: pointer;
+        }
+    </style>
+</body>
+</html>

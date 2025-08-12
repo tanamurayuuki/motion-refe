@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>製品解説アニメーション - 製品機能紹介</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">製品機能紹介</h2>
+        
+        <div class="chart-area">
+            <div class="product-demo-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="productDemoChart">
+                    <!-- Product demo components will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Product data
+        const productData = {
+            productInfo: {
+                name: "CloudSync Pro",
+                tagline: "次世代クラウド同期ソリューション",
+                version: "v2.5.0"
+            },
+            features: [
+                {
+                    name: "高速同期",
+                    icon: "⚡",
+                    description: "業界最速の同期速度",
+                    metrics: { value: 95, unit: "%" },
+                    benefit: "作業効率向上"
+                },
+                {
+                    name: "セキュリティ",
+                    icon: "🔒",
+                    description: "256bit暗号化",
+                    metrics: { value: 99.9, unit: "%" },
+                    benefit: "データ安全性"
+                },
+                {
+                    name: "マルチデバイス",
+                    icon: "📱",
+                    description: "全デバイス対応",
+                    metrics: { value: 15, unit: "台" },
+                    benefit: "アクセス自由度"
+                },
+                {
+                    name: "コスト効率",
+                    icon: "💰",
+                    description: "競合比較",
+                    metrics: { value: 40, unit: "%削減" },
+                    benefit: "運用コスト"
+                }
+            ],
+            competitorComparison: [
+                { feature: "同期速度", our: 95, competitor: 75 },
+                { feature: "セキュリティ", our: 99, competitor: 85 },
+                { feature: "サポート品質", our: 92, competitor: 70 },
+                { feature: "コストパフォーマンス", our: 88, competitor: 60 },
+                { feature: "使いやすさ", our: 94, competitor: 78 }
+            ],
+            usage_scenarios: [
+                { scenario: "個人利用", percentage: 35, icon: "👤" },
+                { scenario: "小規模チーム", percentage: 45, icon: "👥" },
+                { scenario: "企業利用", percentage: 20, icon: "🏢" }
+            ]
+        };
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const width = 800;
+        const height = 400;
+
+        function initChart() {
+            const svg = document.getElementById('productDemoChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add product demo layout
+            addProductLayout(svg);
+        }
+
+        function addProductLayout(svg) {
+            // Background gradient
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            gradient.setAttribute('id', 'bg-gradient');
+            gradient.setAttribute('x1', '0%');
+            gradient.setAttribute('y1', '0%');
+            gradient.setAttribute('x2', '100%');
+            gradient.setAttribute('y2', '100%');
+            
+            const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop1.setAttribute('offset', '0%');
+            stop1.setAttribute('stop-color', '#667eea');
+            stop1.setAttribute('stop-opacity', '0.1');
+            
+            const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop2.setAttribute('offset', '100%');
+            stop2.setAttribute('stop-color', '#764ba2');
+            stop2.setAttribute('stop-opacity', '0.1');
+            
+            gradient.appendChild(stop1);
+            gradient.appendChild(stop2);
+            defs.appendChild(gradient);
+            svg.appendChild(defs);
+            
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('width', width);
+            bg.setAttribute('height', height);
+            bg.setAttribute('fill', 'url(#bg-gradient)');
+            svg.appendChild(bg);
+            
+            // Add product header
+            addProductHeader(svg);
+            
+            // Add feature showcase
+            addFeatureShowcase(svg);
+            
+            // Add competitor comparison
+            addCompetitorComparison(svg);
+            
+            // Add usage scenarios
+            addUsageScenarios(svg);
+        }
+
+        function addProductHeader(svg) {
+            // Header background
+            const headerBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            headerBg.setAttribute('x', '20');
+            headerBg.setAttribute('y', '20');
+            headerBg.setAttribute('width', '760');
+            headerBg.setAttribute('height', '60');
+            headerBg.setAttribute('fill', 'white');
+            headerBg.setAttribute('stroke', '#e0e0e0');
+            headerBg.setAttribute('stroke-width', '1');
+            headerBg.setAttribute('rx', '10');
+            headerBg.setAttribute('opacity', '0');
+            headerBg.setAttribute('class', 'header-bg');
+            svg.appendChild(headerBg);
+            
+            // Product logo/icon
+            const productIcon = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            productIcon.setAttribute('cx', '60');
+            productIcon.setAttribute('cy', '50');
+            productIcon.setAttribute('r', '20');
+            productIcon.setAttribute('fill', '#667eea');
+            productIcon.setAttribute('opacity', '0');
+            productIcon.setAttribute('class', 'product-icon');
+            svg.appendChild(productIcon);
+            
+            const iconText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            iconText.setAttribute('x', '60');
+            iconText.setAttribute('y', '56');
+            iconText.setAttribute('class', 'icon-text');
+            iconText.setAttribute('text-anchor', 'middle');
+            iconText.setAttribute('opacity', '0');
+            iconText.textContent = '☁️';
+            svg.appendChild(iconText);
+            
+            // Product name
+            const productName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            productName.setAttribute('x', '100');
+            productName.setAttribute('y', '45');
+            productName.setAttribute('class', 'product-name');
+            productName.setAttribute('opacity', '0');
+            productName.textContent = productData.productInfo.name;
+            svg.appendChild(productName);
+            
+            // Product tagline
+            const tagline = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            tagline.setAttribute('x', '100');
+            tagline.setAttribute('y', '62');
+            tagline.setAttribute('class', 'product-tagline');
+            tagline.setAttribute('opacity', '0');
+            tagline.textContent = productData.productInfo.tagline;
+            svg.appendChild(tagline);
+            
+            // Version
+            const version = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            version.setAttribute('x', '720');
+            version.setAttribute('y', '50');
+            version.setAttribute('class', 'version-text');
+            version.setAttribute('text-anchor', 'end');
+            version.setAttribute('opacity', '0');
+            version.textContent = productData.productInfo.version;
+            svg.appendChild(version);
+        }
+
+        function addFeatureShowcase(svg) {
+            const startY = 100;
+            const featureHeight = 80;
+            const featureWidth = 180;
+            const spacing = 10;
+            
+            productData.features.forEach((feature, index) => {
+                const x = 20 + (featureWidth + spacing) * index;
+                const y = startY;
+                
+                // Feature card
+                const featureCard = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                featureCard.setAttribute('x', x);
+                featureCard.setAttribute('y', y);
+                featureCard.setAttribute('width', featureWidth);
+                featureCard.setAttribute('height', featureHeight);
+                featureCard.setAttribute('fill', 'white');
+                featureCard.setAttribute('stroke', '#e0e0e0');
+                featureCard.setAttribute('stroke-width', '1');
+                featureCard.setAttribute('rx', '8');
+                featureCard.setAttribute('opacity', '0');
+                featureCard.setAttribute('class', 'feature-card');
+                svg.appendChild(featureCard);
+                
+                // Feature icon
+                const featureIconBg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                featureIconBg.setAttribute('cx', x + 30);
+                featureIconBg.setAttribute('cy', y + 25);
+                featureIconBg.setAttribute('r', '15');
+                featureIconBg.setAttribute('fill', '#667eea');
+                featureIconBg.setAttribute('opacity', '0');
+                featureIconBg.setAttribute('class', 'feature-icon-bg');
+                svg.appendChild(featureIconBg);
+                
+                const featureIcon = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                featureIcon.setAttribute('x', x + 30);
+                featureIcon.setAttribute('y', y + 30);
+                featureIcon.setAttribute('class', 'feature-icon');
+                featureIcon.setAttribute('text-anchor', 'middle');
+                featureIcon.setAttribute('opacity', '0');
+                featureIcon.textContent = feature.icon;
+                svg.appendChild(featureIcon);
+                
+                // Feature name
+                const featureName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                featureName.setAttribute('x', x + 55);
+                featureName.setAttribute('y', y + 20);
+                featureName.setAttribute('class', 'feature-name');
+                featureName.setAttribute('opacity', '0');
+                featureName.textContent = feature.name;
+                svg.appendChild(featureName);
+                
+                // Feature description
+                const featureDesc = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                featureDesc.setAttribute('x', x + 55);
+                featureDesc.setAttribute('y', y + 35);
+                featureDesc.setAttribute('class', 'feature-desc');
+                featureDesc.setAttribute('opacity', '0');
+                featureDesc.textContent = feature.description;
+                svg.appendChild(featureDesc);
+                
+                // Metrics
+                const metricsText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                metricsText.setAttribute('x', x + 10);
+                metricsText.setAttribute('y', y + 60);
+                metricsText.setAttribute('class', 'metrics-text');
+                metricsText.setAttribute('opacity', '0');
+                metricsText.textContent = '0'; // Start with 0 for animation
+                metricsText.setAttribute('data-target', feature.metrics.value);
+                metricsText.setAttribute('data-unit', feature.metrics.unit);
+                svg.appendChild(metricsText);
+                
+                // Benefit
+                const benefitText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                benefitText.setAttribute('x', x + featureWidth - 10);
+                benefitText.setAttribute('y', y + 75);
+                benefitText.setAttribute('class', 'benefit-text');
+                benefitText.setAttribute('text-anchor', 'end');
+                benefitText.setAttribute('opacity', '0');
+                benefitText.textContent = feature.benefit;
+                svg.appendChild(benefitText);
+                
+                // Add hover effects
+                featureCard.addEventListener('mouseenter', (e) => showFeatureTooltip(e, feature));
+                featureCard.addEventListener('mouseleave', hideTooltip);
+            });
+        }
+
+        function addCompetitorComparison(svg) {
+            const compX = 20;
+            const compY = 200;
+            const compWidth = 370;
+            const compHeight = 180;
+            
+            // Comparison background
+            const compBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            compBg.setAttribute('x', compX);
+            compBg.setAttribute('y', compY);
+            compBg.setAttribute('width', compWidth);
+            compBg.setAttribute('height', compHeight);
+            compBg.setAttribute('fill', 'white');
+            compBg.setAttribute('stroke', '#e0e0e0');
+            compBg.setAttribute('stroke-width', '1');
+            compBg.setAttribute('rx', '8');
+            compBg.setAttribute('opacity', '0');
+            compBg.setAttribute('class', 'comparison-bg');
+            svg.appendChild(compBg);
+            
+            // Comparison title
+            const compTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            compTitle.setAttribute('x', compX + 15);
+            compTitle.setAttribute('y', compY + 25);
+            compTitle.setAttribute('class', 'section-title');
+            compTitle.setAttribute('opacity', '0');
+            compTitle.textContent = '競合他社との比較';
+            svg.appendChild(compTitle);
+            
+            // Comparison bars
+            const barHeight = 20;
+            const maxBarWidth = 280;
+            
+            productData.competitorComparison.forEach((item, index) => {
+                const barY = compY + 50 + index * 25;
+                
+                // Feature label
+                const featureLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                featureLabel.setAttribute('x', compX + 15);
+                featureLabel.setAttribute('y', barY + 15);
+                featureLabel.setAttribute('class', 'comparison-label');
+                featureLabel.setAttribute('opacity', '0');
+                featureLabel.textContent = item.feature;
+                svg.appendChild(featureLabel);
+                
+                // Our product bar
+                const ourBarWidth = (item.our / 100) * maxBarWidth;
+                const ourBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                ourBar.setAttribute('x', compX + 90);
+                ourBar.setAttribute('y', barY + 2);
+                ourBar.setAttribute('width', 0);
+                ourBar.setAttribute('height', barHeight - 4);
+                ourBar.setAttribute('fill', '#667eea');
+                ourBar.setAttribute('rx', '2');
+                ourBar.setAttribute('opacity', '0');
+                ourBar.setAttribute('class', 'our-bar');
+                ourBar.setAttribute('data-target-width', ourBarWidth);
+                svg.appendChild(ourBar);
+                
+                // Competitor bar (background)
+                const compBarWidth = (item.competitor / 100) * maxBarWidth;
+                const compBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                compBar.setAttribute('x', compX + 90);
+                compBar.setAttribute('y', barY + 2);
+                compBar.setAttribute('width', 0);
+                compBar.setAttribute('height', barHeight - 4);
+                compBar.setAttribute('fill', '#bdc3c7');
+                compBar.setAttribute('rx', '2');
+                compBar.setAttribute('opacity', '0');
+                compBar.setAttribute('class', 'comp-bar');
+                compBar.setAttribute('data-target-width', compBarWidth);
+                svg.appendChild(compBar);
+                
+                // Our score text
+                const ourScore = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                ourScore.setAttribute('x', compX + 95 + ourBarWidth);
+                ourScore.setAttribute('y', barY + 13);
+                ourScore.setAttribute('class', 'score-text our-score');
+                ourScore.setAttribute('opacity', '0');
+                ourScore.textContent = item.our + '%';
+                svg.appendChild(ourScore);
+            });
+            
+            // Legend
+            const legendY = compY + compHeight - 30;
+            
+            const ourLegendRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            ourLegendRect.setAttribute('x', compX + 15);
+            ourLegendRect.setAttribute('y', legendY);
+            ourLegendRect.setAttribute('width', '15');
+            ourLegendRect.setAttribute('height', '10');
+            ourLegendRect.setAttribute('fill', '#667eea');
+            ourLegendRect.setAttribute('opacity', '0');
+            ourLegendRect.setAttribute('class', 'legend-rect');
+            svg.appendChild(ourLegendRect);
+            
+            const ourLegendText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            ourLegendText.setAttribute('x', compX + 35);
+            ourLegendText.setAttribute('y', legendY + 8);
+            ourLegendText.setAttribute('class', 'legend-text');
+            ourLegendText.setAttribute('opacity', '0');
+            ourLegendText.textContent = '自社製品';
+            svg.appendChild(ourLegendText);
+            
+            const compLegendRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            compLegendRect.setAttribute('x', compX + 100);
+            compLegendRect.setAttribute('y', legendY);
+            compLegendRect.setAttribute('width', '15');
+            compLegendRect.setAttribute('height', '10');
+            compLegendRect.setAttribute('fill', '#bdc3c7');
+            compLegendRect.setAttribute('opacity', '0');
+            compLegendRect.setAttribute('class', 'legend-rect');
+            svg.appendChild(compLegendRect);
+            
+            const compLegendText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            compLegendText.setAttribute('x', compX + 120);
+            compLegendText.setAttribute('y', legendY + 8);
+            compLegendText.setAttribute('class', 'legend-text');
+            compLegendText.setAttribute('opacity', '0');
+            compLegendText.textContent = '競合他社';
+            svg.appendChild(compLegendText);
+        }
+
+        function addUsageScenarios(svg) {
+            const usageX = 410;
+            const usageY = 200;
+            const usageWidth = 370;
+            const usageHeight = 180;
+            
+            // Usage background
+            const usageBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            usageBg.setAttribute('x', usageX);
+            usageBg.setAttribute('y', usageY);
+            usageBg.setAttribute('width', usageWidth);
+            usageBg.setAttribute('height', usageHeight);
+            usageBg.setAttribute('fill', 'white');
+            usageBg.setAttribute('stroke', '#e0e0e0');
+            usageBg.setAttribute('stroke-width', '1');
+            usageBg.setAttribute('rx', '8');
+            usageBg.setAttribute('opacity', '0');
+            usageBg.setAttribute('class', 'usage-bg');
+            svg.appendChild(usageBg);
+            
+            // Usage title
+            const usageTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            usageTitle.setAttribute('x', usageX + 15);
+            usageTitle.setAttribute('y', usageY + 25);
+            usageTitle.setAttribute('class', 'section-title');
+            usageTitle.setAttribute('opacity', '0');
+            usageTitle.textContent = '利用シーン分布';
+            svg.appendChild(usageTitle);
+            
+            // Pie chart for usage scenarios
+            const pieX = usageX + usageWidth / 2;
+            const pieY = usageY + usageHeight / 2 + 10;
+            const pieRadius = 60;
+            
+            let currentAngle = -Math.PI / 2; // Start from top
+            
+            productData.usage_scenarios.forEach((scenario, index) => {
+                const angleSpan = (scenario.percentage / 100) * 2 * Math.PI;
+                const endAngle = currentAngle + angleSpan;
+                
+                // Pie slice
+                const x1 = pieX + pieRadius * Math.cos(currentAngle);
+                const y1 = pieY + pieRadius * Math.sin(currentAngle);
+                const x2 = pieX + pieRadius * Math.cos(endAngle);
+                const y2 = pieY + pieRadius * Math.sin(endAngle);
+                
+                const largeArcFlag = angleSpan > Math.PI ? '1' : '0';
+                const pathData = `M ${pieX} ${pieY} L ${x1} ${y1} A ${pieRadius} ${pieRadius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+                
+                const colors = ['#667eea', '#764ba2', '#f093fb'];
+                
+                const slice = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                slice.setAttribute('d', pathData);
+                slice.setAttribute('fill', colors[index]);
+                slice.setAttribute('stroke', 'white');
+                slice.setAttribute('stroke-width', '2');
+                slice.setAttribute('opacity', '0');
+                slice.setAttribute('class', 'pie-slice');
+                
+                slice.addEventListener('mouseenter', (e) => showScenarioTooltip(e, scenario));
+                slice.addEventListener('mouseleave', hideTooltip);
+                
+                svg.appendChild(slice);
+                
+                // Label
+                const midAngle = (currentAngle + endAngle) / 2;
+                const labelRadius = pieRadius + 25;
+                const labelX = pieX + labelRadius * Math.cos(midAngle);
+                const labelY = pieY + labelRadius * Math.sin(midAngle);
+                
+                // Icon
+                const iconText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                iconText.setAttribute('x', labelX);
+                iconText.setAttribute('y', labelY - 5);
+                iconText.setAttribute('class', 'scenario-icon');
+                iconText.setAttribute('text-anchor', 'middle');
+                iconText.setAttribute('opacity', '0');
+                iconText.textContent = scenario.icon;
+                svg.appendChild(iconText);
+                
+                // Percentage
+                const percentText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                percentText.setAttribute('x', labelX);
+                percentText.setAttribute('y', labelY + 10);
+                percentText.setAttribute('class', 'scenario-percent');
+                percentText.setAttribute('text-anchor', 'middle');
+                percentText.setAttribute('opacity', '0');
+                percentText.textContent = '0%'; // Start with 0 for animation
+                percentText.setAttribute('data-target', scenario.percentage);
+                svg.appendChild(percentText);
+                
+                currentAngle = endAngle;
+            });
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateProductDemo();
+        }
+
+        function animateProductDemo() {
+            // Phase 1: Header
+            animateProductHeader(() => {
+                // Phase 2: Features
+                animateFeatures(() => {
+                    // Phase 3: Comparison
+                    animateComparison(() => {
+                        // Phase 4: Usage scenarios
+                        animateUsageScenarios(() => {
+                            isPlaying = false;
+                            document.getElementById('playBtn').style.opacity = '1';
+                        });
+                    });
+                });
+            });
+        }
+
+        function animateProductHeader(callback) {
+            const svg = document.getElementById('productDemoChart');
+            const headerElements = svg.querySelectorAll('.header-bg, .product-icon, .icon-text, .product-name, .product-tagline, .version-text');
+            
+            let elementIndex = 0;
+            
+            function animateNext() {
+                if (elementIndex >= headerElements.length) {
+                    callback();
+                    return;
+                }
+                
+                const element = headerElements[elementIndex];
+                
+                let startTime = null;
+                const duration = 500 / animationSpeed;
+                
+                function animate(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    
+                    element.setAttribute('opacity', progress);
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        elementIndex++;
+                        setTimeout(() => animateNext(), 100 / animationSpeed);
+                    }
+                }
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animateNext();
+        }
+
+        function animateFeatures(callback) {
+            const svg = document.getElementById('productDemoChart');
+            const featureElements = svg.querySelectorAll('.feature-card, .feature-icon-bg, .feature-icon, .feature-name, .feature-desc, .benefit-text');
+            const metricsElements = svg.querySelectorAll('.metrics-text');
+            
+            // Show feature elements
+            featureElements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.setAttribute('opacity', '1');
+                }, index * 50 / animationSpeed);
+            });
+            
+            // Animate metrics values
+            setTimeout(() => {
+                metricsElements.forEach((metric, index) => {
+                    const targetValue = parseFloat(metric.getAttribute('data-target'));
+                    const unit = metric.getAttribute('data-unit');
+                    
+                    let startTime = null;
+                    const duration = 1500 / animationSpeed;
+                    
+                    function animate(timestamp) {
+                        if (!startTime) startTime = timestamp;
+                        const progress = Math.min((timestamp - startTime) / duration, 1);
+                        
+                        const currentValue = targetValue * progress;
+                        metric.textContent = (targetValue > 10 ? Math.round(currentValue) : currentValue.toFixed(1)) + unit;
+                        metric.setAttribute('opacity', progress);
+                        
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        }
+                    }
+                    
+                    setTimeout(() => requestAnimationFrame(animate), index * 200 / animationSpeed);
+                });
+            }, 800 / animationSpeed);
+            
+            setTimeout(callback, 2500 / animationSpeed);
+        }
+
+        function animateComparison(callback) {
+            const svg = document.getElementById('productDemoChart');
+            const compElements = svg.querySelectorAll('.comparison-bg, .section-title, .comparison-label, .legend-rect, .legend-text');
+            const ourBars = svg.querySelectorAll('.our-bar');
+            const compBars = svg.querySelectorAll('.comp-bar');
+            const scoreTexts = svg.querySelectorAll('.our-score');
+            
+            // Show background and static elements
+            compElements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.setAttribute('opacity', '1');
+                }, index * 100 / animationSpeed);
+            });
+            
+            // Animate bars
+            setTimeout(() => {
+                ourBars.forEach((bar, index) => {
+                    const targetWidth = parseFloat(bar.getAttribute('data-target-width'));
+                    const compBar = compBars[index];
+                    const compTargetWidth = parseFloat(compBar.getAttribute('data-target-width'));
+                    const scoreText = scoreTexts[index];
+                    
+                    let startTime = null;
+                    const duration = 1200 / animationSpeed;
+                    
+                    function animate(timestamp) {
+                        if (!startTime) startTime = timestamp;
+                        const progress = Math.min((timestamp - startTime) / duration, 1);
+                        
+                        // Our bar (foreground)
+                        const currentWidth = targetWidth * progress;
+                        bar.setAttribute('width', currentWidth);
+                        bar.setAttribute('opacity', progress);
+                        
+                        // Competitor bar (background, shows behind)
+                        compBar.setAttribute('width', compTargetWidth);
+                        compBar.setAttribute('opacity', progress * 0.3);
+                        
+                        // Score text
+                        scoreText.setAttribute('opacity', progress);
+                        scoreText.setAttribute('x', parseFloat(scoreText.getAttribute('x').replace(/[^0-9.]/g, '')) - targetWidth + currentWidth);
+                        
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        }
+                    }
+                    
+                    setTimeout(() => requestAnimationFrame(animate), index * 150 / animationSpeed);
+                });
+            }, 1000 / animationSpeed);
+            
+            setTimeout(callback, 3000 / animationSpeed);
+        }
+
+        function animateUsageScenarios(callback) {
+            const svg = document.getElementById('productDemoChart');
+            const usageBg = svg.querySelector('.usage-bg');
+            const sectionTitle = svg.querySelectorAll('.section-title')[1]; // Second title
+            const pieSlices = svg.querySelectorAll('.pie-slice');
+            const scenarioIcons = svg.querySelectorAll('.scenario-icon');
+            const scenarioPercents = svg.querySelectorAll('.scenario-percent');
+            
+            // Show background and title
+            usageBg.setAttribute('opacity', '1');
+            if (sectionTitle) sectionTitle.setAttribute('opacity', '1');
+            
+            // Animate pie slices
+            setTimeout(() => {
+                pieSlices.forEach((slice, index) => {
+                    let startTime = null;
+                    const duration = 800 / animationSpeed;
+                    
+                    function animate(timestamp) {
+                        if (!startTime) startTime = timestamp;
+                        const progress = Math.min((timestamp - startTime) / duration, 1);
+                        
+                        slice.setAttribute('opacity', progress);
+                        
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        }
+                    }
+                    
+                    setTimeout(() => requestAnimationFrame(animate), index * 200 / animationSpeed);
+                });
+            }, 500 / animationSpeed);
+            
+            // Show icons and animate percentages
+            setTimeout(() => {
+                scenarioIcons.forEach(icon => {
+                    icon.setAttribute('opacity', '1');
+                });
+                
+                scenarioPercents.forEach((percent, index) => {
+                    const targetValue = parseFloat(percent.getAttribute('data-target'));
+                    
+                    let startTime = null;
+                    const duration = 1000 / animationSpeed;
+                    
+                    function animate(timestamp) {
+                        if (!startTime) startTime = timestamp;
+                        const progress = Math.min((timestamp - startTime) / duration, 1);
+                        
+                        const currentValue = targetValue * progress;
+                        percent.textContent = Math.round(currentValue) + '%';
+                        percent.setAttribute('opacity', progress);
+                        
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        }
+                    }
+                    
+                    setTimeout(() => requestAnimationFrame(animate), index * 150 / animationSpeed);
+                });
+            }, 1200 / animationSpeed);
+            
+            setTimeout(callback, 2500 / animationSpeed);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('productDemoChart');
+            const allElements = svg.querySelectorAll('*:not(defs):not(defs *):not(rect:first-child)');
+            
+            allElements.forEach(element => {
+                element.setAttribute('opacity', '0');
+                
+                if (element.classList.contains('metrics-text')) {
+                    element.textContent = '0';
+                }
+                if (element.classList.contains('scenario-percent')) {
+                    element.textContent = '0%';
+                }
+                if (element.classList.contains('our-bar') || element.classList.contains('comp-bar')) {
+                    element.setAttribute('width', '0');
+                }
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showFeatureTooltip(event, feature) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${feature.name}</strong><br>
+                ${feature.description}<br>
+                効果: ${feature.benefit}
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function showScenarioTooltip(event, scenario) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${scenario.scenario}</strong><br>
+                利用率: ${scenario.percentage}%
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <style>
+        .product-name {
+            fill: #2c3e50;
+            font-size: 20px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .product-tagline {
+            fill: #7f8c8d;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .version-text {
+            fill: #95a5a6;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .icon-text {
+            font-size: 16px;
+            fill: white;
+        }
+        
+        .feature-name {
+            fill: #2c3e50;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .feature-desc {
+            fill: #7f8c8d;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .feature-icon {
+            font-size: 14px;
+            fill: white;
+        }
+        
+        .metrics-text {
+            fill: #667eea;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .benefit-text {
+            fill: #27ae60;
+            font-size: 9px;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+        }
+        
+        .section-title {
+            fill: #2c3e50;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .comparison-label {
+            fill: #34495e;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .score-text {
+            font-size: 9px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .our-score {
+            fill: #667eea;
+        }
+        
+        .legend-text {
+            fill: #7f8c8d;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .scenario-icon {
+            font-size: 18px;
+        }
+        
+        .scenario-percent {
+            fill: #2c3e50;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .feature-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            stroke: #667eea;
+            stroke-width: 2;
+        }
+        
+        .pie-slice {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .pie-slice:hover {
+            opacity: 0.8;
+        }
+        
+        .our-bar, .comp-bar {
+            transition: all 0.3s ease;
+        }
+    </style>
+</body>
+</html>

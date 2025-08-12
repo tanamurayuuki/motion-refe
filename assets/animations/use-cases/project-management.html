@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>プロジェクト進捗管理アニメーション - 大規模開発プロジェクト</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">大規模開発プロジェクト</h2>
+        
+        <div class="chart-area">
+            <div class="project-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="projectChart">
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const projectData = {
+            overview: {
+                name: "次世代システム開発",
+                progress: 68,
+                budget: 85,
+                timeline: 72,
+                risk: 'medium'
+            },
+            phases: [
+                { name: '要件定義', progress: 100, status: 'completed', duration: 30 },
+                { name: '設計', progress: 95, status: 'completed', duration: 45 },
+                { name: '開発', progress: 68, status: 'in-progress', duration: 120 },
+                { name: 'テスト', progress: 25, status: 'in-progress', duration: 60 },
+                { name: '導入', progress: 0, status: 'pending', duration: 20 }
+            ],
+            resources: [
+                { role: 'プロジェクトマネージャー', allocated: 1, utilized: 0.9 },
+                { role: 'シニアエンジニア', allocated: 4, utilized: 3.8 },
+                { role: 'ジュニアエンジニア', allocated: 8, utilized: 7.2 },
+                { role: 'テスター', allocated: 3, utilized: 2.1 },
+                { role: 'デザイナー', allocated: 2, utilized: 1.6 }
+            ],
+            milestones: [
+                { name: '要件確定', date: '2024-01-15', status: 'completed' },
+                { name: '設計レビュー', date: '2024-03-01', status: 'completed' },
+                { name: 'アルファ版', date: '2024-06-15', status: 'completed' },
+                { name: 'ベータ版', date: '2024-09-01', status: 'in-progress' },
+                { name: '本番リリース', date: '2024-12-01', status: 'pending' }
+            ]
+        };
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+
+        function initChart() {
+            const svg = document.getElementById('projectChart');
+            svg.innerHTML = '';
+            
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('width', '800');
+            bg.setAttribute('height', '400');
+            bg.setAttribute('fill', '#f8f9fa');
+            svg.appendChild(bg);
+            
+            addProjectOverview(svg);
+            addPhaseProgress(svg);
+            addResourceUtilization(svg);
+            addMilestoneTimeline(svg);
+        }
+
+        function addProjectOverview(svg) {
+            const kpis = [
+                { label: '全体進捗', value: projectData.overview.progress, unit: '%', color: '#3498db' },
+                { label: '予算消化', value: projectData.overview.budget, unit: '%', color: '#e74c3c' },
+                { label: 'スケジュール', value: projectData.overview.timeline, unit: '%', color: '#27ae60' }
+            ];
+
+            kpis.forEach((kpi, index) => {
+                const x = 50 + index * 240;
+                const y = 30;
+
+                const card = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                card.setAttribute('x', x);
+                card.setAttribute('y', y);
+                card.setAttribute('width', '220');
+                card.setAttribute('height', '60');
+                card.setAttribute('fill', 'white');
+                card.setAttribute('stroke', '#e1e8ed');
+                card.setAttribute('rx', '8');
+                card.setAttribute('opacity', '0');
+                card.setAttribute('class', 'kpi-card');
+                svg.appendChild(card);
+
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', x + 15);
+                label.setAttribute('y', y + 25);
+                label.setAttribute('class', 'kpi-label');
+                label.setAttribute('opacity', '0');
+                label.textContent = kpi.label;
+                svg.appendChild(label);
+
+                // Progress bar
+                const progressBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                progressBg.setAttribute('x', x + 15);
+                progressBg.setAttribute('y', y + 35);
+                progressBg.setAttribute('width', '150');
+                progressBg.setAttribute('height', '8');
+                progressBg.setAttribute('fill', '#ecf0f1');
+                progressBg.setAttribute('rx', '4');
+                progressBg.setAttribute('opacity', '0');
+                svg.appendChild(progressBg);
+
+                const progressBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                progressBar.setAttribute('x', x + 15);
+                progressBar.setAttribute('y', y + 35);
+                progressBar.setAttribute('width', '0');
+                progressBar.setAttribute('height', '8');
+                progressBar.setAttribute('fill', kpi.color);
+                progressBar.setAttribute('rx', '4');
+                progressBar.setAttribute('opacity', '0');
+                progressBar.setAttribute('class', 'progress-bar');
+                progressBar.setAttribute('data-target-width', (kpi.value / 100) * 150);
+                svg.appendChild(progressBar);
+
+                const valueText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                valueText.setAttribute('x', x + 180);
+                valueText.setAttribute('y', y + 40);
+                valueText.setAttribute('class', 'kpi-value');
+                valueText.setAttribute('opacity', '0');
+                valueText.textContent = '0%';
+                valueText.setAttribute('data-target', kpi.value);
+                svg.appendChild(valueText);
+            });
+        }
+
+        function addPhaseProgress(svg) {
+            const phaseX = 50;
+            const phaseY = 110;
+            const phaseWidth = 350;
+            const phaseHeight = 200;
+
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('x', phaseX);
+            bg.setAttribute('y', phaseY);
+            bg.setAttribute('width', phaseWidth);
+            bg.setAttribute('height', phaseHeight);
+            bg.setAttribute('fill', 'white');
+            bg.setAttribute('stroke', '#e1e8ed');
+            bg.setAttribute('rx', '8');
+            bg.setAttribute('opacity', '0');
+            bg.setAttribute('class', 'phase-bg');
+            svg.appendChild(bg);
+
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', phaseX + 20);
+            title.setAttribute('y', phaseY + 25);
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = 'フェーズ別進捗';
+            svg.appendChild(title);
+
+            projectData.phases.forEach((phase, index) => {
+                const y = phaseY + 50 + index * 30;
+
+                const phaseName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                phaseName.setAttribute('x', phaseX + 20);
+                phaseName.setAttribute('y', y);
+                phaseName.setAttribute('class', 'phase-name');
+                phaseName.setAttribute('opacity', '0');
+                phaseName.textContent = phase.name;
+                svg.appendChild(phaseName);
+
+                // Status indicator
+                const statusColors = { 'completed': '#27ae60', 'in-progress': '#f39c12', 'pending': '#bdc3c7' };
+                const statusDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                statusDot.setAttribute('cx', phaseX + 120);
+                statusDot.setAttribute('cy', y - 5);
+                statusDot.setAttribute('r', '4');
+                statusDot.setAttribute('fill', statusColors[phase.status]);
+                statusDot.setAttribute('opacity', '0');
+                statusDot.setAttribute('class', 'status-dot');
+                svg.appendChild(statusDot);
+
+                // Progress bar
+                const phaseProgressBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                phaseProgressBg.setAttribute('x', phaseX + 140);
+                phaseProgressBg.setAttribute('y', y - 10);
+                phaseProgressBg.setAttribute('width', '150');
+                phaseProgressBg.setAttribute('height', '12');
+                phaseProgressBg.setAttribute('fill', '#ecf0f1');
+                phaseProgressBg.setAttribute('rx', '6');
+                phaseProgressBg.setAttribute('opacity', '0');
+                svg.appendChild(phaseProgressBg);
+
+                const phaseProgressBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                phaseProgressBar.setAttribute('x', phaseX + 140);
+                phaseProgressBar.setAttribute('y', y - 10);
+                phaseProgressBar.setAttribute('width', '0');
+                phaseProgressBar.setAttribute('height', '12');
+                phaseProgressBar.setAttribute('fill', statusColors[phase.status]);
+                phaseProgressBar.setAttribute('rx', '6');
+                phaseProgressBar.setAttribute('opacity', '0');
+                phaseProgressBar.setAttribute('class', 'phase-progress-bar');
+                phaseProgressBar.setAttribute('data-target-width', (phase.progress / 100) * 150);
+                svg.appendChild(phaseProgressBar);
+
+                const progressText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                progressText.setAttribute('x', phaseX + 300);
+                progressText.setAttribute('y', y);
+                progressText.setAttribute('class', 'progress-text');
+                progressText.setAttribute('opacity', '0');
+                progressText.textContent = phase.progress + '%';
+                svg.appendChild(progressText);
+            });
+        }
+
+        function addResourceUtilization(svg) {
+            const resourceX = 420;
+            const resourceY = 110;
+            const resourceWidth = 330;
+            const resourceHeight = 120;
+
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('x', resourceX);
+            bg.setAttribute('y', resourceY);
+            bg.setAttribute('width', resourceWidth);
+            bg.setAttribute('height', resourceHeight);
+            bg.setAttribute('fill', 'white');
+            bg.setAttribute('stroke', '#e1e8ed');
+            bg.setAttribute('rx', '8');
+            bg.setAttribute('opacity', '0');
+            bg.setAttribute('class', 'resource-bg');
+            svg.appendChild(bg);
+
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', resourceX + 20);
+            title.setAttribute('y', resourceY + 25);
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = 'リソース稼働率';
+            svg.appendChild(title);
+
+            projectData.resources.forEach((resource, index) => {
+                const y = resourceY + 50 + index * 18;
+
+                const roleName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                roleName.setAttribute('x', resourceX + 20);
+                roleName.setAttribute('y', y);
+                roleName.setAttribute('class', 'role-name');
+                roleName.setAttribute('opacity', '0');
+                roleName.textContent = resource.role;
+                svg.appendChild(roleName);
+
+                const utilization = Math.round((resource.utilized / resource.allocated) * 100);
+                const utilizationText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                utilizationText.setAttribute('x', resourceX + 280);
+                utilizationText.setAttribute('y', y);
+                utilizationText.setAttribute('class', 'utilization-text');
+                utilizationText.setAttribute('opacity', '0');
+                utilizationText.textContent = `${resource.utilized}/${resource.allocated} (${utilization}%)`;
+                svg.appendChild(utilizationText);
+            });
+        }
+
+        function addMilestoneTimeline(svg) {
+            const timelineX = 420;
+            const timelineY = 250;
+            const timelineWidth = 330;
+            const timelineHeight = 130;
+
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('x', timelineX);
+            bg.setAttribute('y', timelineY);
+            bg.setAttribute('width', timelineWidth);
+            bg.setAttribute('height', timelineHeight);
+            bg.setAttribute('fill', 'white');
+            bg.setAttribute('stroke', '#e1e8ed');
+            bg.setAttribute('rx', '8');
+            bg.setAttribute('opacity', '0');
+            bg.setAttribute('class', 'timeline-bg');
+            svg.appendChild(bg);
+
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', timelineX + 20);
+            title.setAttribute('y', timelineY + 25);
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = 'マイルストーン';
+            svg.appendChild(title);
+
+            // Timeline line
+            const timelineLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            timelineLine.setAttribute('x1', timelineX + 30);
+            timelineLine.setAttribute('y1', timelineY + 50);
+            timelineLine.setAttribute('x2', timelineX + 300);
+            timelineLine.setAttribute('y2', timelineY + 50);
+            timelineLine.setAttribute('stroke', '#bdc3c7');
+            timelineLine.setAttribute('stroke-width', '2');
+            timelineLine.setAttribute('opacity', '0');
+            timelineLine.setAttribute('class', 'timeline-line');
+            svg.appendChild(timelineLine);
+
+            projectData.milestones.forEach((milestone, index) => {
+                const x = timelineX + 30 + (index * 60);
+
+                const statusColors = { 'completed': '#27ae60', 'in-progress': '#f39c12', 'pending': '#bdc3c7' };
+                
+                const milestonePoint = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                milestonePoint.setAttribute('cx', x);
+                milestonePoint.setAttribute('cy', timelineY + 50);
+                milestonePoint.setAttribute('r', '6');
+                milestonePoint.setAttribute('fill', statusColors[milestone.status]);
+                milestonePoint.setAttribute('stroke', 'white');
+                milestonePoint.setAttribute('stroke-width', '2');
+                milestonePoint.setAttribute('opacity', '0');
+                milestonePoint.setAttribute('class', 'milestone-point');
+                svg.appendChild(milestonePoint);
+
+                const milestoneName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                milestoneName.setAttribute('x', x);
+                milestoneName.setAttribute('y', timelineY + 75);
+                milestoneName.setAttribute('text-anchor', 'middle');
+                milestoneName.setAttribute('class', 'milestone-name');
+                milestoneName.setAttribute('opacity', '0');
+                milestoneName.textContent = milestone.name;
+                svg.appendChild(milestoneName);
+
+                const milestoneDate = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                milestoneDate.setAttribute('x', x);
+                milestoneDate.setAttribute('y', timelineY + 90);
+                milestoneDate.setAttribute('text-anchor', 'middle');
+                milestoneDate.setAttribute('class', 'milestone-date');
+                milestoneDate.setAttribute('opacity', '0');
+                milestoneDate.textContent = milestone.date;
+                svg.appendChild(milestoneDate);
+            });
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateProjectDashboard();
+        }
+
+        function animateProjectDashboard() {
+            const svg = document.getElementById('projectChart');
+            
+            // Phase 1: KPI cards
+            setTimeout(() => {
+                const kpiCards = svg.querySelectorAll('.kpi-card');
+                const kpiLabels = svg.querySelectorAll('.kpi-label');
+                const progressBars = svg.querySelectorAll('.progress-bar');
+                const kpiValues = svg.querySelectorAll('.kpi-value');
+
+                kpiCards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.setAttribute('opacity', '1');
+                        kpiLabels[index].setAttribute('opacity', '1');
+                        
+                        const progressBar = progressBars[index];
+                        const targetWidth = progressBar.getAttribute('data-target-width');
+                        progressBar.setAttribute('width', targetWidth);
+                        progressBar.setAttribute('opacity', '1');
+                        
+                        const valueElement = kpiValues[index];
+                        const target = parseInt(valueElement.getAttribute('data-target'));
+                        
+                        let current = 0;
+                        const increment = target / 30;
+                        
+                        const counter = setInterval(() => {
+                            current += increment;
+                            if (current >= target) {
+                                current = target;
+                                clearInterval(counter);
+                            }
+                            valueElement.textContent = Math.round(current) + '%';
+                            valueElement.setAttribute('opacity', '1');
+                        }, 50);
+                    }, index * 300);
+                });
+            }, 0);
+
+            // Phase 2: Phase progress
+            setTimeout(() => {
+                svg.querySelector('.phase-bg').setAttribute('opacity', '1');
+                svg.querySelectorAll('.section-title')[0].setAttribute('opacity', '1');
+
+                const phaseElements = svg.querySelectorAll('.phase-name, .status-dot, .progress-text');
+                const phaseProgressBars = svg.querySelectorAll('.phase-progress-bar');
+
+                phaseElements.forEach((element, index) => {
+                    setTimeout(() => {
+                        element.setAttribute('opacity', '1');
+                    }, index * 100);
+                });
+
+                phaseProgressBars.forEach((bar, index) => {
+                    setTimeout(() => {
+                        const targetWidth = bar.getAttribute('data-target-width');
+                        bar.setAttribute('width', targetWidth);
+                        bar.setAttribute('opacity', '1');
+                    }, index * 200);
+                });
+            }, 1500);
+
+            // Phase 3: Resources and timeline
+            setTimeout(() => {
+                svg.querySelector('.resource-bg').setAttribute('opacity', '1');
+                svg.querySelector('.timeline-bg').setAttribute('opacity', '1');
+                svg.querySelectorAll('.section-title')[1].setAttribute('opacity', '1');
+                svg.querySelectorAll('.section-title')[2].setAttribute('opacity', '1');
+
+                const resourceElements = svg.querySelectorAll('.role-name, .utilization-text');
+                resourceElements.forEach((element, index) => {
+                    setTimeout(() => {
+                        element.setAttribute('opacity', '1');
+                    }, index * 100);
+                });
+
+                svg.querySelector('.timeline-line').setAttribute('opacity', '1');
+
+                const milestoneElements = svg.querySelectorAll('.milestone-point, .milestone-name, .milestone-date');
+                milestoneElements.forEach((element, index) => {
+                    setTimeout(() => {
+                        element.setAttribute('opacity', '1');
+                    }, index * 100);
+                });
+
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+            }, 3000);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            const svg = document.getElementById('projectChart');
+            const allElements = svg.querySelectorAll('*:not(rect:first-child)');
+            
+            allElements.forEach(element => {
+                element.setAttribute('opacity', '0');
+                
+                if (element.classList.contains('kpi-value')) {
+                    element.textContent = '0%';
+                }
+                if (element.classList.contains('progress-bar') || element.classList.contains('phase-progress-bar')) {
+                    element.setAttribute('width', '0');
+                }
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        window.addEventListener('load', () => {
+            initChart();
+            setTimeout(() => playAnimation(), 1000);
+        });
+    </script>
+
+    <style>
+        .kpi-label {
+            fill: #7f8c8d;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .kpi-value {
+            fill: #2c3e50;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .section-title {
+            fill: #2c3e50;
+            font-size: 13px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .phase-name {
+            fill: #34495e;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .progress-text {
+            fill: #2c3e50;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .role-name {
+            fill: #34495e;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .utilization-text {
+            fill: #7f8c8d;
+            font-size: 9px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .milestone-name {
+            fill: #2c3e50;
+            font-size: 9px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .milestone-date {
+            fill: #7f8c8d;
+            font-size: 8px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .milestone-point {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .milestone-point:hover {
+            r: 8;
+        }
+    </style>
+</body>
+</html>

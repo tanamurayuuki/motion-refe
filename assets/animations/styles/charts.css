@@ -1,0 +1,355 @@
+/* Chart-specific Styles for Infographic Animations */
+
+/* SVG Base Styles */
+.chart-svg {
+    width: 100%;
+    height: 100%;
+    max-width: 800px;
+    max-height: 500px;
+    overflow: visible;
+}
+
+/* Bar Chart Styles */
+.bar-chart-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+}
+
+.bar {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.bar:hover {
+    opacity: 0.8;
+    transform: scale(1.02);
+}
+
+.bar-animate {
+    animation: barGrow 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    transform-origin: bottom;
+}
+
+@keyframes barGrow {
+    from {
+        transform: scaleY(0);
+        opacity: 0.7;
+    }
+    to {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+}
+
+/* Line Chart Styles */
+.line-chart-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+}
+
+.line-path {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.line-animate {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: drawLine 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes drawLine {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.data-point {
+    fill: white;
+    stroke-width: 2;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.data-point:hover {
+    r: 8;
+    stroke-width: 3;
+}
+
+.point-animate {
+    animation: pointAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: center;
+}
+
+@keyframes pointAppear {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Pie Chart Styles */
+.pie-chart-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pie-svg {
+    flex: 1;
+    max-width: 400px;
+}
+
+.pie-slice {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.pie-slice:hover {
+    transform: scale(1.05);
+}
+
+.pie-animate {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: drawSlice 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes drawSlice {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.pie-legend {
+    flex: 0 0 200px;
+    padding-left: 30px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    opacity: 0;
+    transform: translateX(20px);
+    animation: legendAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes legendAppear {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.legend-text {
+    font-size: 14px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.legend-value {
+    font-size: 12px;
+    color: #666;
+    margin-left: auto;
+    font-weight: 500;
+}
+
+/* Scatter Plot Styles */
+.scatter-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+}
+
+.scatter-point {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0.8;
+}
+
+.scatter-point:hover {
+    opacity: 1;
+    transform: scale(1.3);
+}
+
+.scatter-animate {
+    animation: scatterAppear 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes scatterAppear {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    to {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+}
+
+/* Bubble Chart Styles */
+.bubble-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+}
+
+.bubble {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0.7;
+}
+
+.bubble:hover {
+    opacity: 0.9;
+    transform: scale(1.1);
+}
+
+.bubble-animate {
+    animation: bubbleGrow 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes bubbleGrow {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    70% {
+        transform: scale(1.1);
+    }
+    to {
+        transform: scale(1);
+        opacity: 0.7;
+    }
+}
+
+/* Axis Styles */
+.axis {
+    stroke: #e0e0e0;
+    stroke-width: 1;
+}
+
+.axis-label {
+    font-size: 12px;
+    fill: #666;
+    text-anchor: middle;
+}
+
+.grid-line {
+    stroke: #f5f5f5;
+    stroke-width: 1;
+    stroke-dasharray: 3,3;
+}
+
+/* Tooltip Styles */
+.tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    pointer-events: none;
+    z-index: 1000;
+    transform: translate(-50%, -100%);
+    margin-top: -10px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.8);
+}
+
+.tooltip.show {
+    opacity: 1;
+}
+
+/* Color Palettes */
+.color-1 { fill: #FF6B6B; stroke: #FF6B6B; }
+.color-2 { fill: #4ECDC4; stroke: #4ECDC4; }
+.color-3 { fill: #45B7D1; stroke: #45B7D1; }
+.color-4 { fill: #96CEB4; stroke: #96CEB4; }
+.color-5 { fill: #FECA57; stroke: #FECA57; }
+.color-6 { fill: #FF9FF3; stroke: #FF9FF3; }
+.color-7 { fill: #54A0FF; stroke: #54A0FF; }
+.color-8 { fill: #5F27CD; stroke: #5F27CD; }
+
+/* Responsive Charts */
+@media (max-width: 768px) {
+    .pie-chart-container {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .pie-svg {
+        max-width: 300px;
+        margin-bottom: 20px;
+    }
+    
+    .pie-legend {
+        flex: none;
+        padding-left: 0;
+        width: 100%;
+    }
+    
+    .chart-svg {
+        max-height: 350px;
+    }
+}
+
+@media (max-width: 480px) {
+    .bar-chart-container,
+    .line-chart-container,
+    .scatter-container,
+    .bubble-container {
+        height: 300px;
+    }
+    
+    .pie-svg {
+        max-width: 250px;
+    }
+    
+    .legend-item {
+        margin-bottom: 10px;
+    }
+    
+    .legend-text {
+        font-size: 13px;
+    }
+    
+    .legend-value {
+        font-size: 11px;
+    }
+}

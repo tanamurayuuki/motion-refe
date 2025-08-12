@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>市場分析レポートアニメーション - 競合他社比較分析</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">競合他社比較分析</h2>
+        
+        <div class="chart-area">
+            <div class="market-analysis-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="marketChart">
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const marketData = {
+            companies: [
+                { name: "自社", share: 35, growth: 15.2, satisfaction: 4.3, innovation: 8.5 },
+                { name: "A社", share: 28, growth: 12.8, satisfaction: 4.1, innovation: 7.2 },
+                { name: "B社", share: 22, growth: 8.5, satisfaction: 3.9, innovation: 6.8 },
+                { name: "C社", share: 15, growth: 5.2, satisfaction: 3.7, innovation: 6.0 }
+            ],
+            marketTrends: [
+                { quarter: "Q1", total: 1200, our: 420 },
+                { quarter: "Q2", total: 1350, our: 473 },
+                { quarter: "Q3", total: 1480, our: 518 },
+                { quarter: "Q4", total: 1620, our: 567 }
+            ]
+        };
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+
+        function initChart() {
+            const svg = document.getElementById('marketChart');
+            svg.innerHTML = '';
+            
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('width', '800');
+            bg.setAttribute('height', '400');
+            bg.setAttribute('fill', '#f8f9fa');
+            svg.appendChild(bg);
+            
+            addMarketShareChart(svg);
+            addCompetitorComparison(svg);
+            addTrendAnalysis(svg);
+        }
+
+        function addMarketShareChart(svg) {
+            const pieX = 150;
+            const pieY = 120;
+            const pieRadius = 70;
+            
+            // Pie chart title
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', pieX);
+            title.setAttribute('y', '30');
+            title.setAttribute('text-anchor', 'middle');
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = '市場シェア';
+            svg.appendChild(title);
+            
+            let currentAngle = -Math.PI / 2;
+            const colors = ['#e74c3c', '#3498db', '#f39c12', '#27ae60'];
+            
+            marketData.companies.forEach((company, index) => {
+                const angleSpan = (company.share / 100) * 2 * Math.PI;
+                const endAngle = currentAngle + angleSpan;
+                
+                const x1 = pieX + pieRadius * Math.cos(currentAngle);
+                const y1 = pieY + pieRadius * Math.sin(currentAngle);
+                const x2 = pieX + pieRadius * Math.cos(endAngle);
+                const y2 = pieY + pieRadius * Math.sin(endAngle);
+                
+                const largeArcFlag = angleSpan > Math.PI ? '1' : '0';
+                const pathData = `M ${pieX} ${pieY} L ${x1} ${y1} A ${pieRadius} ${pieRadius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+                
+                const slice = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                slice.setAttribute('d', pathData);
+                slice.setAttribute('fill', colors[index]);
+                slice.setAttribute('opacity', '0');
+                slice.setAttribute('class', 'pie-slice');
+                svg.appendChild(slice);
+                
+                // Legend
+                const legendY = 50 + index * 20;
+                const legendRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                legendRect.setAttribute('x', '50');
+                legendRect.setAttribute('y', legendY - 8);
+                legendRect.setAttribute('width', '12');
+                legendRect.setAttribute('height', '12');
+                legendRect.setAttribute('fill', colors[index]);
+                legendRect.setAttribute('opacity', '0');
+                legendRect.setAttribute('class', 'legend-item');
+                svg.appendChild(legendRect);
+                
+                const legendText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                legendText.setAttribute('x', '68');
+                legendText.setAttribute('y', legendY + 2);
+                legendText.setAttribute('class', 'legend-text');
+                legendText.setAttribute('opacity', '0');
+                legendText.textContent = `${company.name}: ${company.share}%`;
+                svg.appendChild(legendText);
+                
+                currentAngle = endAngle;
+            });
+        }
+
+        function addCompetitorComparison(svg) {
+            const compX = 350;
+            const compY = 50;
+            
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', compX + 100);
+            title.setAttribute('y', '30');
+            title.setAttribute('text-anchor', 'middle');
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = '競合比較';
+            svg.appendChild(title);
+            
+            const headers = ['企業', '成長率', '満足度', '革新性'];
+            headers.forEach((header, index) => {
+                const headerText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                headerText.setAttribute('x', compX + index * 80);
+                headerText.setAttribute('y', compY + 20);
+                headerText.setAttribute('class', 'table-header');
+                headerText.setAttribute('opacity', '0');
+                headerText.textContent = header;
+                svg.appendChild(headerText);
+            });
+            
+            marketData.companies.forEach((company, rowIndex) => {
+                const rowY = compY + 45 + rowIndex * 25;
+                
+                const nameText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                nameText.setAttribute('x', compX);
+                nameText.setAttribute('y', rowY);
+                nameText.setAttribute('class', 'table-cell');
+                nameText.setAttribute('opacity', '0');
+                nameText.textContent = company.name;
+                svg.appendChild(nameText);
+                
+                const growthText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                growthText.setAttribute('x', compX + 80);
+                growthText.setAttribute('y', rowY);
+                growthText.setAttribute('class', 'table-cell');
+                growthText.setAttribute('opacity', '0');
+                growthText.textContent = '0%';
+                growthText.setAttribute('data-target', company.growth);
+                svg.appendChild(growthText);
+                
+                const satisfactionText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                satisfactionText.setAttribute('x', compX + 160);
+                satisfactionText.setAttribute('y', rowY);
+                satisfactionText.setAttribute('class', 'table-cell');
+                satisfactionText.setAttribute('opacity', '0');
+                satisfactionText.textContent = '0.0';
+                satisfactionText.setAttribute('data-target', company.satisfaction);
+                svg.appendChild(satisfactionText);
+                
+                const innovationBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                innovationBar.setAttribute('x', compX + 240);
+                innovationBar.setAttribute('y', rowY - 8);
+                innovationBar.setAttribute('width', '0');
+                innovationBar.setAttribute('height', '12');
+                innovationBar.setAttribute('fill', '#3498db');
+                innovationBar.setAttribute('opacity', '0');
+                innovationBar.setAttribute('class', 'innovation-bar');
+                innovationBar.setAttribute('data-target-width', company.innovation * 8);
+                svg.appendChild(innovationBar);
+            });
+        }
+
+        function addTrendAnalysis(svg) {
+            const trendX = 50;
+            const trendY = 250;
+            const trendWidth = 700;
+            const trendHeight = 120;
+            
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('x', trendX);
+            bg.setAttribute('y', trendY);
+            bg.setAttribute('width', trendWidth);
+            bg.setAttribute('height', trendHeight);
+            bg.setAttribute('fill', 'white');
+            bg.setAttribute('stroke', '#e0e0e0');
+            bg.setAttribute('opacity', '0');
+            bg.setAttribute('class', 'trend-bg');
+            svg.appendChild(bg);
+            
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', trendX + 20);
+            title.setAttribute('y', trendY + 25);
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = '四半期トレンド分析';
+            svg.appendChild(title);
+            
+            // Line chart for trend
+            let totalPath = '';
+            let ourPath = '';
+            
+            marketData.marketTrends.forEach((data, index) => {
+                const x = trendX + 100 + index * 150;
+                const totalY = trendY + 90 - (data.total / 2000) * 40;
+                const ourY = trendY + 90 - (data.our / 2000) * 40;
+                
+                if (index === 0) {
+                    totalPath += `M ${x} ${totalY}`;
+                    ourPath += `M ${x} ${ourY}`;
+                } else {
+                    totalPath += ` L ${x} ${totalY}`;
+                    ourPath += ` L ${x} ${ourY}`;
+                }
+                
+                const quarterLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                quarterLabel.setAttribute('x', x);
+                quarterLabel.setAttribute('y', trendY + 110);
+                quarterLabel.setAttribute('text-anchor', 'middle');
+                quarterLabel.setAttribute('class', 'quarter-label');
+                quarterLabel.setAttribute('opacity', '0');
+                quarterLabel.textContent = data.quarter;
+                svg.appendChild(quarterLabel);
+            });
+            
+            const totalLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            totalLine.setAttribute('d', totalPath);
+            totalLine.setAttribute('fill', 'none');
+            totalLine.setAttribute('stroke', '#95a5a6');
+            totalLine.setAttribute('stroke-width', '2');
+            totalLine.setAttribute('opacity', '0');
+            totalLine.setAttribute('class', 'total-line');
+            svg.appendChild(totalLine);
+            
+            const ourLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            ourLine.setAttribute('d', ourPath);
+            ourLine.setAttribute('fill', 'none');
+            ourLine.setAttribute('stroke', '#e74c3c');
+            ourLine.setAttribute('stroke-width', '3');
+            ourLine.setAttribute('opacity', '0');
+            ourLine.setAttribute('class', 'our-line');
+            svg.appendChild(ourLine);
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateMarketAnalysis();
+        }
+
+        function animateMarketAnalysis() {
+            const svg = document.getElementById('marketChart');
+            
+            // Phase 1: Market share
+            setTimeout(() => {
+                svg.querySelectorAll('.section-title')[0].setAttribute('opacity', '1');
+                
+                const slices = svg.querySelectorAll('.pie-slice');
+                const legends = svg.querySelectorAll('.legend-item, .legend-text');
+                
+                slices.forEach((slice, index) => {
+                    setTimeout(() => {
+                        slice.setAttribute('opacity', '0.8');
+                    }, index * 200);
+                });
+                
+                legends.forEach((legend, index) => {
+                    setTimeout(() => {
+                        legend.setAttribute('opacity', '1');
+                    }, index * 100);
+                });
+            }, 0);
+            
+            // Phase 2: Competitor comparison
+            setTimeout(() => {
+                svg.querySelectorAll('.section-title')[1].setAttribute('opacity', '1');
+                
+                const headers = svg.querySelectorAll('.table-header');
+                const cells = svg.querySelectorAll('.table-cell');
+                const bars = svg.querySelectorAll('.innovation-bar');
+                
+                headers.forEach(header => header.setAttribute('opacity', '1'));
+                cells.forEach((cell, index) => {
+                    setTimeout(() => {
+                        cell.setAttribute('opacity', '1');
+                        
+                        const target = cell.getAttribute('data-target');
+                        if (target) {
+                            const isGrowth = cell.textContent.includes('%');
+                            const isSatisfaction = cell.textContent.includes('.');
+                            
+                            let current = 0;
+                            const increment = target / 30;
+                            
+                            const counter = setInterval(() => {
+                                current += increment;
+                                if (current >= target) {
+                                    current = target;
+                                    clearInterval(counter);
+                                }
+                                
+                                if (isGrowth) {
+                                    cell.textContent = current.toFixed(1) + '%';
+                                } else if (isSatisfaction) {
+                                    cell.textContent = current.toFixed(1);
+                                } else {
+                                    cell.textContent = Math.round(current);
+                                }
+                            }, 50);
+                        }
+                    }, index * 100);
+                });
+                
+                bars.forEach((bar, index) => {
+                    setTimeout(() => {
+                        const targetWidth = bar.getAttribute('data-target-width');
+                        bar.setAttribute('width', targetWidth);
+                        bar.setAttribute('opacity', '0.8');
+                    }, index * 200);
+                });
+            }, 1500);
+            
+            // Phase 3: Trend analysis
+            setTimeout(() => {
+                svg.querySelector('.trend-bg').setAttribute('opacity', '1');
+                svg.querySelectorAll('.section-title')[2].setAttribute('opacity', '1');
+                
+                setTimeout(() => {
+                    svg.querySelector('.total-line').setAttribute('opacity', '1');
+                    svg.querySelector('.our-line').setAttribute('opacity', '1');
+                    
+                    svg.querySelectorAll('.quarter-label').forEach(label => {
+                        label.setAttribute('opacity', '1');
+                    });
+                }, 500);
+                
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+            }, 3000);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            const svg = document.getElementById('marketChart');
+            const allElements = svg.querySelectorAll('*:not(rect:first-child)');
+            
+            allElements.forEach(element => {
+                element.setAttribute('opacity', '0');
+                
+                if (element.classList.contains('table-cell') && element.getAttribute('data-target')) {
+                    if (element.textContent.includes('%')) {
+                        element.textContent = '0%';
+                    } else if (element.textContent.includes('.')) {
+                        element.textContent = '0.0';
+                    }
+                }
+                
+                if (element.classList.contains('innovation-bar')) {
+                    element.setAttribute('width', '0');
+                }
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        window.addEventListener('load', () => {
+            initChart();
+            setTimeout(() => playAnimation(), 1000);
+        });
+    </script>
+
+    <style>
+        .section-title {
+            fill: #2c3e50;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .legend-text {
+            fill: #34495e;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .table-header {
+            fill: #2c3e50;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .table-cell {
+            fill: #34495e;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .quarter-label {
+            fill: #7f8c8d;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .pie-slice {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .pie-slice:hover {
+            opacity: 1 !important;
+        }
+    </style>
+</body>
+</html>

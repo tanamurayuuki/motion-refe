@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>バブルチャートアニメーション - 3変数データ分析</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">企業パフォーマンス分析（売上 × 利益率 × 従業員数）</h2>
+        
+        <div class="chart-area">
+            <div class="bubble-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="bubbleChart">
+                    <!-- Grid lines and chart elements will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for bubble chart - company performance analysis
+        const data = [
+            { company: 'テック企業A', revenue: 150, profitRate: 25, employees: 500, color: '#FF6B6B', sector: 'IT' },
+            { company: '製造業B', revenue: 300, profitRate: 15, employees: 1200, color: '#4ECDC4', sector: '製造' },
+            { company: '小売業C', revenue: 200, profitRate: 8, employees: 800, color: '#45B7D1', sector: '小売' },
+            { company: '金融業D', revenue: 400, profitRate: 20, employees: 600, color: '#96CEB4', sector: '金融' },
+            { company: '医療E', revenue: 100, profitRate: 30, employees: 300, color: '#FECA57', sector: '医療' },
+            { company: 'エネルギーF', revenue: 500, profitRate: 12, employees: 2000, color: '#FF9FF3', sector: 'エネルギー' },
+            { company: '食品G', revenue: 180, profitRate: 18, employees: 700, color: '#54A0FF', sector: '食品' },
+            { company: '通信H', revenue: 250, profitRate: 22, employees: 400, color: '#5F27CD', sector: '通信' },
+            { company: '不動産I', revenue: 120, profitRate: 35, employees: 200, color: '#FF6B6B', sector: '不動産' },
+            { company: '教育J', revenue: 80, profitRate: 28, employees: 150, color: '#4ECDC4', sector: '教育' },
+            { company: '物流K', revenue: 220, profitRate: 10, employees: 900, color: '#45B7D1', sector: '物流' },
+            { company: '娯楽L', revenue: 90, profitRate: 40, employees: 250, color: '#96CEB4', sector: '娯楽' }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const margin = { top: 40, right: 60, bottom: 80, left: 80 };
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        // Scales
+        const minRevenue = Math.min(...data.map(d => d.revenue));
+        const maxRevenue = Math.max(...data.map(d => d.revenue));
+        const minProfitRate = Math.min(...data.map(d => d.profitRate));
+        const maxProfitRate = Math.max(...data.map(d => d.profitRate));
+        const minEmployees = Math.min(...data.map(d => d.employees));
+        const maxEmployees = Math.max(...data.map(d => d.employees));
+        
+        const xScale = (value) => ((value - minRevenue) / (maxRevenue - minRevenue)) * width;
+        const yScale = (value) => height - ((value - minProfitRate) / (maxProfitRate - minProfitRate)) * height;
+        const sizeScale = (value) => 10 + ((value - minEmployees) / (maxEmployees - minEmployees)) * 30;
+
+        function initChart() {
+            const svg = document.getElementById('bubbleChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add background grid
+            addGrid(svg);
+            
+            // Add axes
+            addAxes(svg);
+            
+            // Add legend for bubble sizes
+            addSizeLegend(svg);
+            
+            // Add data bubbles (initially hidden)
+            data.forEach((d, i) => {
+                addBubble(svg, d, i);
+            });
+        }
+
+        function addGrid(svg) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'grid');
+            
+            // Horizontal grid lines
+            for (let i = 0; i <= 5; i++) {
+                const y = margin.top + (height / 5) * i;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', margin.left);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', margin.left + width);
+                line.setAttribute('y2', y);
+                line.setAttribute('class', 'grid-line');
+                g.appendChild(line);
+            }
+            
+            // Vertical grid lines
+            for (let i = 0; i <= 5; i++) {
+                const x = margin.left + (width / 5) * i;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x);
+                line.setAttribute('y1', margin.top);
+                line.setAttribute('x2', x);
+                line.setAttribute('y2', margin.top + height);
+                line.setAttribute('class', 'grid-line');
+                g.appendChild(line);
+            }
+            
+            svg.appendChild(g);
+        }
+
+        function addAxes(svg) {
+            // X axis
+            const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            xAxis.setAttribute('x1', margin.left);
+            xAxis.setAttribute('y1', margin.top + height);
+            xAxis.setAttribute('x2', margin.left + width);
+            xAxis.setAttribute('y2', margin.top + height);
+            xAxis.setAttribute('class', 'axis');
+            svg.appendChild(xAxis);
+
+            // Y axis
+            const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            yAxis.setAttribute('x1', margin.left);
+            yAxis.setAttribute('y1', margin.top);
+            yAxis.setAttribute('x2', margin.left);
+            yAxis.setAttribute('y2', margin.top + height);
+            yAxis.setAttribute('class', 'axis');
+            svg.appendChild(yAxis);
+
+            // X axis labels
+            for (let i = 0; i <= 5; i++) {
+                const value = minRevenue + ((maxRevenue - minRevenue) / 5) * i;
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', margin.left + (width / 5) * i);
+                text.setAttribute('y', margin.top + height + 20);
+                text.setAttribute('class', 'axis-label');
+                text.setAttribute('text-anchor', 'middle');
+                text.textContent = Math.round(value) + '億円';
+                svg.appendChild(text);
+            }
+
+            // Y axis labels
+            for (let i = 0; i <= 5; i++) {
+                const value = minProfitRate + ((maxProfitRate - minProfitRate) / 5) * (5 - i);
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', margin.left - 15);
+                text.setAttribute('y', margin.top + (height / 5) * i + 5);
+                text.setAttribute('class', 'axis-label');
+                text.setAttribute('text-anchor', 'end');
+                text.textContent = Math.round(value) + '%';
+                svg.appendChild(text);
+            }
+
+            // Axis titles
+            const xTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            xTitle.setAttribute('x', margin.left + width / 2);
+            xTitle.setAttribute('y', margin.top + height + 50);
+            xTitle.setAttribute('class', 'label-text');
+            xTitle.setAttribute('text-anchor', 'middle');
+            xTitle.textContent = '売上 (億円)';
+            svg.appendChild(xTitle);
+
+            const yTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            yTitle.setAttribute('x', 20);
+            yTitle.setAttribute('y', margin.top + height / 2);
+            yTitle.setAttribute('class', 'label-text');
+            yTitle.setAttribute('text-anchor', 'middle');
+            yTitle.setAttribute('transform', `rotate(-90 20 ${margin.top + height / 2})`);
+            yTitle.textContent = '利益率 (%)';
+            svg.appendChild(yTitle);
+        }
+
+        function addSizeLegend(svg) {
+            // Legend background
+            const legendBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            legendBg.setAttribute('x', width + margin.left - 120);
+            legendBg.setAttribute('y', margin.top + 10);
+            legendBg.setAttribute('width', 110);
+            legendBg.setAttribute('height', 100);
+            legendBg.setAttribute('fill', 'rgba(255, 255, 255, 0.9)');
+            legendBg.setAttribute('stroke', '#e0e0e0');
+            legendBg.setAttribute('stroke-width', '1');
+            legendBg.setAttribute('rx', '5');
+            svg.appendChild(legendBg);
+
+            // Legend title
+            const legendTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            legendTitle.setAttribute('x', width + margin.left - 65);
+            legendTitle.setAttribute('y', margin.top + 30);
+            legendTitle.setAttribute('class', 'label-text');
+            legendTitle.setAttribute('text-anchor', 'middle');
+            legendTitle.setAttribute('font-size', '12');
+            legendTitle.textContent = '従業員数';
+            svg.appendChild(legendTitle);
+
+            // Legend circles
+            const legendData = [
+                { employees: minEmployees, y: 45, label: Math.round(minEmployees) },
+                { employees: (minEmployees + maxEmployees) / 2, y: 65, label: Math.round((minEmployees + maxEmployees) / 2) },
+                { employees: maxEmployees, y: 85, label: Math.round(maxEmployees) }
+            ];
+
+            legendData.forEach(d => {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', width + margin.left - 90);
+                circle.setAttribute('cy', margin.top + d.y);
+                circle.setAttribute('r', sizeScale(d.employees) / 2);
+                circle.setAttribute('fill', 'rgba(102, 126, 234, 0.3)');
+                circle.setAttribute('stroke', '#667eea');
+                circle.setAttribute('stroke-width', '1');
+                svg.appendChild(circle);
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', width + margin.left - 50);
+                text.setAttribute('y', margin.top + d.y + 3);
+                text.setAttribute('class', 'axis-label');
+                text.setAttribute('font-size', '10');
+                text.textContent = d.label + '人';
+                svg.appendChild(text);
+            });
+        }
+
+        function addBubble(svg, d, index) {
+            const bubble = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            bubble.setAttribute('cx', margin.left + xScale(d.revenue));
+            bubble.setAttribute('cy', margin.top + yScale(d.profitRate));
+            bubble.setAttribute('r', '0');
+            bubble.setAttribute('fill', d.color);
+            bubble.setAttribute('stroke', 'white');
+            bubble.setAttribute('stroke-width', '2');
+            bubble.setAttribute('class', 'bubble');
+            bubble.setAttribute('opacity', '0');
+            
+            // Add hover events
+            bubble.addEventListener('mouseenter', (e) => showTooltip(e, d));
+            bubble.addEventListener('mouseleave', hideTooltip);
+            
+            svg.appendChild(bubble);
+
+            // Company label
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', margin.left + xScale(d.revenue));
+            text.setAttribute('y', margin.top + yScale(d.profitRate) - sizeScale(d.employees) - 5);
+            text.setAttribute('class', 'value-text');
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('font-size', '10');
+            text.setAttribute('opacity', '0');
+            text.textContent = d.company;
+            
+            svg.appendChild(text);
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            currentStep = 0;
+            animateBubbles();
+        }
+
+        function animateBubbles() {
+            if (currentStep >= data.length || !isPlaying) {
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+                return;
+            }
+            
+            const svg = document.getElementById('bubbleChart');
+            const bubbles = svg.querySelectorAll('.bubble');
+            const texts = svg.querySelectorAll('.value-text');
+            
+            const bubble = bubbles[currentStep];
+            const text = texts[currentStep];
+            const bubbleData = data[currentStep];
+            const targetRadius = sizeScale(bubbleData.employees);
+            
+            // Animate bubble growth with elastic effect
+            let startTime = null;
+            const duration = 800 / animationSpeed;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Elastic easing function
+                let easeProgress;
+                if (progress === 0) {
+                    easeProgress = 0;
+                } else if (progress === 1) {
+                    easeProgress = 1;
+                } else {
+                    const c4 = (2 * Math.PI) / 3;
+                    easeProgress = progress < 0.5
+                        ? -(Math.pow(2, 20 * progress - 10) * Math.sin((20 * progress - 11.125) * c4)) / 2
+                        : (Math.pow(2, -20 * progress + 10) * Math.sin((20 * progress - 11.125) * c4)) / 2 + 1;
+                }
+                
+                const currentRadius = targetRadius * easeProgress;
+                bubble.setAttribute('r', currentRadius);
+                bubble.setAttribute('opacity', Math.min(easeProgress * 0.7, 0.7));
+                
+                // Animate text
+                if (progress > 0.7) {
+                    const textProgress = (progress - 0.7) / 0.3;
+                    text.setAttribute('opacity', textProgress);
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Move to next bubble
+                    currentStep++;
+                    animationTimeout = setTimeout(() => {
+                        animateBubbles();
+                    }, 200 / animationSpeed);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('bubbleChart');
+            const bubbles = svg.querySelectorAll('.bubble');
+            const texts = svg.querySelectorAll('.value-text');
+            
+            // Reset bubbles
+            bubbles.forEach(bubble => {
+                bubble.setAttribute('opacity', '0');
+                bubble.setAttribute('r', '0');
+            });
+            
+            // Reset texts
+            texts.forEach(text => {
+                text.setAttribute('opacity', '0');
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, data) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${data.company}</strong><br>
+                業界: ${data.sector}<br>
+                売上: ${data.revenue}億円<br>
+                利益率: ${data.profitRate}%<br>
+                従業員数: ${data.employees}人
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+</body>
+</html>

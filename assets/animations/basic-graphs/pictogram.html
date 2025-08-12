@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ピクトグラムアニメーション - 人口統計データ表現</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">人口統計データ表現</h2>
+        
+        <div class="chart-area">
+            <div class="pictogram-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="pictogramChart">
+                    <!-- Pictogram icons will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for pictogram
+        const pictogramData = [
+            {
+                category: '子供 (0-19歳)',
+                count: 25,
+                color: '#FF6B6B',
+                icon: '👶',
+                description: '全体の25%'
+            },
+            {
+                category: '大人 (20-64歳)', 
+                count: 60,
+                color: '#4ECDC4',
+                icon: '👨‍💼',
+                description: '全体の60%'
+            },
+            {
+                category: '高齢者 (65歳以上)',
+                count: 15,
+                color: '#45B7D1',
+                icon: '👴',
+                description: '全体の15%'
+            }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const margin = { top: 60, right: 40, bottom: 80, left: 40 };
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        // Icon grid settings
+        const iconsPerRow = 10;
+        const iconSize = 24;
+        const iconSpacing = 6;
+        const rowHeight = iconSize + iconSpacing;
+
+        function initChart() {
+            const svg = document.getElementById('pictogramChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add title
+            addTitle(svg);
+            
+            // Add pictogram sections
+            let currentY = margin.top;
+            pictogramData.forEach((data, index) => {
+                currentY += addPictogramSection(svg, data, index, currentY);
+            });
+            
+            // Add legend
+            addPictogramLegend(svg);
+        }
+
+        function addTitle(svg) {
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', width / 2 + margin.left);
+            title.setAttribute('y', 30);
+            title.setAttribute('class', 'main-title');
+            title.setAttribute('text-anchor', 'middle');
+            title.textContent = '年代別人口分布（100人当たり）';
+            svg.appendChild(title);
+        }
+
+        function addPictogramSection(svg, data, sectionIndex, startY) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'pictogram-section');
+            g.setAttribute('data-section', sectionIndex);
+            
+            // Section title
+            const sectionTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            sectionTitle.setAttribute('x', margin.left);
+            sectionTitle.setAttribute('y', startY + 20);
+            sectionTitle.setAttribute('class', 'section-title');
+            sectionTitle.setAttribute('fill', data.color);
+            sectionTitle.textContent = `${data.category} - ${data.description}`;
+            g.appendChild(sectionTitle);
+            
+            // Calculate rows needed
+            const rows = Math.ceil(data.count / iconsPerRow);
+            const sectionHeight = rows * rowHeight + 40;
+            
+            // Add icons
+            for (let i = 0; i < data.count; i++) {
+                const row = Math.floor(i / iconsPerRow);
+                const col = i % iconsPerRow;
+                
+                const x = margin.left + col * (iconSize + iconSpacing);
+                const y = startY + 30 + row * rowHeight;
+                
+                // Background circle for icon
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', x + iconSize / 2);
+                circle.setAttribute('cy', y + iconSize / 2);
+                circle.setAttribute('r', iconSize / 2 - 2);
+                circle.setAttribute('fill', data.color);
+                circle.setAttribute('opacity', '0');
+                circle.setAttribute('class', 'icon-bg');
+                g.appendChild(circle);
+                
+                // Icon (using text for emoji/symbol)
+                const icon = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                icon.setAttribute('x', x + iconSize / 2);
+                icon.setAttribute('y', y + iconSize / 2 + 6);
+                icon.setAttribute('class', 'icon-symbol');
+                icon.setAttribute('text-anchor', 'middle');
+                icon.setAttribute('opacity', '0');
+                icon.setAttribute('font-size', '16px');
+                icon.textContent = data.icon;
+                
+                // Add hover events
+                const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                group.appendChild(circle);
+                group.appendChild(icon);
+                group.addEventListener('mouseenter', (e) => showTooltip(e, data, i + 1));
+                group.addEventListener('mouseleave', hideTooltip);
+                
+                g.appendChild(group);
+            }
+            
+            svg.appendChild(g);
+            
+            return sectionHeight;
+        }
+
+        function addPictogramLegend(svg) {
+            const legendY = height - 20;
+            
+            // Legend explanation
+            const legendText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            legendText.setAttribute('x', width / 2 + margin.left);
+            legendText.setAttribute('y', legendY);
+            legendText.setAttribute('class', 'legend-text');
+            legendText.setAttribute('text-anchor', 'middle');
+            legendText.textContent = '1つのアイコン = 1人を表します';
+            svg.appendChild(legendText);
+            
+            // Sample icons for legend
+            pictogramData.forEach((data, i) => {
+                const legendX = margin.left + i * 200;
+                
+                // Legend icon
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', legendX);
+                circle.setAttribute('cy', legendY - 30);
+                circle.setAttribute('r', 12);
+                circle.setAttribute('fill', data.color);
+                svg.appendChild(circle);
+                
+                const icon = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                icon.setAttribute('x', legendX);
+                icon.setAttribute('y', legendY - 24);
+                icon.setAttribute('class', 'legend-icon');
+                icon.setAttribute('text-anchor', 'middle');
+                icon.setAttribute('font-size', '14px');
+                icon.textContent = data.icon;
+                svg.appendChild(icon);
+                
+                // Legend label
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', legendX + 20);
+                label.setAttribute('y', legendY - 25);
+                label.setAttribute('class', 'legend-label');
+                label.textContent = data.category;
+                svg.appendChild(label);
+            });
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animatePictogram(0);
+        }
+
+        function animatePictogram(sectionIndex) {
+            if (sectionIndex >= pictogramData.length || !isPlaying) {
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+                return;
+            }
+            
+            const svg = document.getElementById('pictogramChart');
+            const section = svg.querySelector(`.pictogram-section[data-section="${sectionIndex}"]`);
+            const icons = section.querySelectorAll('.icon-bg');
+            const symbols = section.querySelectorAll('.icon-symbol');
+            
+            const data = pictogramData[sectionIndex];
+            
+            // Animate icons one by one
+            let iconIndex = 0;
+            
+            function animateNextIcon() {
+                if (iconIndex >= data.count || !isPlaying) {
+                    // Move to next section after delay
+                    animationTimeout = setTimeout(() => {
+                        animatePictogram(sectionIndex + 1);
+                    }, 500 / animationSpeed);
+                    return;
+                }
+                
+                const icon = icons[iconIndex];
+                const symbol = symbols[iconIndex];
+                
+                let startTime = null;
+                const duration = 300 / animationSpeed;
+                
+                function animate(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    
+                    // Bounce easing
+                    const bounceProgress = progress < 0.5 
+                        ? 4 * progress * progress * progress
+                        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+                    
+                    // Scale animation
+                    const scale = 0.3 + 0.7 * bounceProgress;
+                    icon.setAttribute('opacity', bounceProgress);
+                    symbol.setAttribute('opacity', bounceProgress);
+                    
+                    // Apply transform
+                    const centerX = parseFloat(icon.getAttribute('cx'));
+                    const centerY = parseFloat(icon.getAttribute('cy'));
+                    
+                    icon.style.transform = `scale(${scale})`;
+                    icon.style.transformOrigin = `${centerX}px ${centerY}px`;
+                    symbol.style.transform = `scale(${scale})`;
+                    symbol.style.transformOrigin = `${centerX}px ${centerY}px`;
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        iconIndex++;
+                        // Small delay between icons
+                        setTimeout(() => {
+                            animateNextIcon();
+                        }, 50 / animationSpeed);
+                    }
+                }
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animateNextIcon();
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('pictogramChart');
+            const icons = svg.querySelectorAll('.icon-bg');
+            const symbols = svg.querySelectorAll('.icon-symbol');
+            
+            icons.forEach(icon => {
+                icon.setAttribute('opacity', '0');
+                icon.style.transform = 'scale(0.3)';
+            });
+            
+            symbols.forEach(symbol => {
+                symbol.setAttribute('opacity', '0');
+                symbol.style.transform = 'scale(0.3)';
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, data, count) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${data.category}</strong><br>
+                ${count}人目 / ${data.count}人<br>
+                ${data.description}
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <style>
+        .main-title {
+            fill: #333;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .icon-bg {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .icon-bg:hover {
+            stroke: #333;
+            stroke-width: 2;
+        }
+        
+        .icon-symbol {
+            pointer-events: none;
+            font-family: 'Segoe UI Emoji', Arial, sans-serif;
+        }
+        
+        .legend-text {
+            fill: #666;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+        }
+        
+        .legend-icon {
+            font-family: 'Segoe UI Emoji', Arial, sans-serif;
+            fill: white;
+        }
+        
+        .legend-label {
+            fill: #333;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .pictogram-section {
+            cursor: pointer;
+        }
+        
+        .pictogram-section:hover .icon-bg {
+            opacity: 0.8;
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ヒートマップアニメーション - ウェブサイト利用状況分析</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">ウェブサイト利用状況分析</h2>
+        
+        <div class="chart-area">
+            <div class="heatmap-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="heatmapChart">
+                    <!-- Heatmap grid will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for heatmap (website usage by hour and day)
+        const days = ['月', '火', '水', '木', '金', '土', '日'];
+        const hours = ['0', '2', '4', '6', '8', '10', '12', '14', '16', '18', '20', '22'];
+        
+        // Generate realistic website usage data
+        const generateHeatmapData = () => {
+            const data = [];
+            days.forEach((day, dayIndex) => {
+                hours.forEach((hour, hourIndex) => {
+                    let baseValue = 20;
+                    
+                    // Weekend pattern (lower usage)
+                    if (dayIndex >= 5) {
+                        baseValue *= 0.7;
+                    }
+                    
+                    // Business hours pattern (higher usage 9-17)
+                    if (hourIndex >= 4 && hourIndex <= 8) {
+                        baseValue *= 2.5;
+                    }
+                    
+                    // Evening pattern (moderate usage 18-22)
+                    if (hourIndex >= 9 && hourIndex <= 10) {
+                        baseValue *= 1.5;
+                    }
+                    
+                    // Add some randomness
+                    const value = Math.round(baseValue + (Math.random() - 0.5) * 20);
+                    
+                    data.push({
+                        day: day,
+                        dayIndex: dayIndex,
+                        hour: hour + '時',
+                        hourIndex: hourIndex,
+                        value: Math.max(0, value)
+                    });
+                });
+            });
+            return data;
+        };
+
+        const heatmapData = generateHeatmapData();
+        const maxValue = Math.max(...heatmapData.map(d => d.value));
+        
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const margin = { top: 40, right: 60, bottom: 80, left: 80 };
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+        const cellWidth = width / hours.length;
+        const cellHeight = height / days.length;
+
+        function initChart() {
+            const svg = document.getElementById('heatmapChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add axes labels
+            addAxes(svg);
+            
+            // Add heatmap cells (initially hidden)
+            heatmapData.forEach((d, i) => {
+                addHeatmapCell(svg, d, i);
+            });
+            
+            // Add color legend
+            addColorLegend(svg);
+        }
+
+        function addAxes(svg) {
+            // X axis labels (hours)
+            hours.forEach((hour, i) => {
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', margin.left + cellWidth * i + cellWidth / 2);
+                text.setAttribute('y', margin.top + height + 25);
+                text.setAttribute('class', 'axis-label');
+                text.setAttribute('text-anchor', 'middle');
+                text.textContent = hour + '時';
+                svg.appendChild(text);
+            });
+
+            // Y axis labels (days)
+            days.forEach((day, i) => {
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', margin.left - 15);
+                text.setAttribute('y', margin.top + cellHeight * i + cellHeight / 2 + 5);
+                text.setAttribute('class', 'axis-label');
+                text.setAttribute('text-anchor', 'end');
+                text.textContent = day + '曜日';
+                svg.appendChild(text);
+            });
+
+            // Title labels
+            const xTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            xTitle.setAttribute('x', margin.left + width / 2);
+            xTitle.setAttribute('y', margin.top + height + 60);
+            xTitle.setAttribute('class', 'axis-title');
+            xTitle.setAttribute('text-anchor', 'middle');
+            xTitle.textContent = '時間帯';
+            svg.appendChild(xTitle);
+
+            const yTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            yTitle.setAttribute('x', 30);
+            yTitle.setAttribute('y', margin.top + height / 2);
+            yTitle.setAttribute('class', 'axis-title');
+            yTitle.setAttribute('text-anchor', 'middle');
+            yTitle.setAttribute('transform', `rotate(-90, 30, ${margin.top + height / 2})`);
+            yTitle.textContent = '曜日';
+            svg.appendChild(yTitle);
+        }
+
+        function addHeatmapCell(svg, data, index) {
+            const x = margin.left + cellWidth * data.hourIndex;
+            const y = margin.top + cellHeight * data.dayIndex;
+            
+            // Calculate color based on value
+            const intensity = data.value / maxValue;
+            const color = getHeatmapColor(intensity);
+            
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', x);
+            rect.setAttribute('y', y);
+            rect.setAttribute('width', cellWidth - 1);
+            rect.setAttribute('height', cellHeight - 1);
+            rect.setAttribute('fill', color);
+            rect.setAttribute('stroke', '#fff');
+            rect.setAttribute('stroke-width', '1');
+            rect.setAttribute('opacity', '0');
+            rect.setAttribute('class', 'heatmap-cell');
+            rect.setAttribute('data-value', data.value);
+            
+            // Add hover events
+            rect.addEventListener('mouseenter', (e) => showTooltip(e, data));
+            rect.addEventListener('mouseleave', hideTooltip);
+            
+            svg.appendChild(rect);
+            
+            // Add value text
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', x + cellWidth / 2);
+            text.setAttribute('y', y + cellHeight / 2 + 4);
+            text.setAttribute('class', 'cell-text');
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('opacity', '0');
+            text.textContent = data.value;
+            svg.appendChild(text);
+        }
+
+        function getHeatmapColor(intensity) {
+            // Create color gradient from light blue to dark red
+            const colors = [
+                { r: 240, g: 248, b: 255 }, // Very light blue
+                { r: 173, g: 216, b: 230 }, // Light blue
+                { r: 100, g: 149, b: 237 }, // Cornflower blue
+                { r: 255, g: 165, b: 0 },   // Orange
+                { r: 255, g: 69, b: 0 },    // Red orange
+                { r: 220, g: 20, b: 60 }    // Crimson
+            ];
+            
+            const step = intensity * (colors.length - 1);
+            const index = Math.floor(step);
+            const fraction = step - index;
+            
+            if (index >= colors.length - 1) {
+                const color = colors[colors.length - 1];
+                return `rgb(${color.r}, ${color.g}, ${color.b})`;
+            }
+            
+            const color1 = colors[index];
+            const color2 = colors[index + 1];
+            
+            const r = Math.round(color1.r + (color2.r - color1.r) * fraction);
+            const g = Math.round(color1.g + (color2.g - color1.g) * fraction);
+            const b = Math.round(color1.b + (color2.b - color1.b) * fraction);
+            
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function addColorLegend(svg) {
+            const legendX = margin.left + width + 20;
+            const legendY = margin.top + 50;
+            const legendHeight = 150;
+            const legendWidth = 20;
+            
+            // Create gradient definition
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            gradient.setAttribute('id', 'heatmap-gradient');
+            gradient.setAttribute('x1', '0%');
+            gradient.setAttribute('y1', '100%');
+            gradient.setAttribute('x2', '0%');
+            gradient.setAttribute('y2', '0%');
+            
+            // Add color stops
+            for (let i = 0; i <= 10; i++) {
+                const stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                stop.setAttribute('offset', `${i * 10}%`);
+                stop.setAttribute('stop-color', getHeatmapColor(i / 10));
+                gradient.appendChild(stop);
+            }
+            
+            defs.appendChild(gradient);
+            svg.appendChild(defs);
+            
+            // Legend rectangle
+            const legendRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            legendRect.setAttribute('x', legendX);
+            legendRect.setAttribute('y', legendY);
+            legendRect.setAttribute('width', legendWidth);
+            legendRect.setAttribute('height', legendHeight);
+            legendRect.setAttribute('fill', 'url(#heatmap-gradient)');
+            legendRect.setAttribute('stroke', '#333');
+            legendRect.setAttribute('stroke-width', '1');
+            svg.appendChild(legendRect);
+            
+            // Legend labels
+            for (let i = 0; i <= 4; i++) {
+                const value = Math.round((maxValue / 4) * (4 - i));
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', legendX + legendWidth + 5);
+                text.setAttribute('y', legendY + (legendHeight / 4) * i + 5);
+                text.setAttribute('class', 'legend-text');
+                text.textContent = value;
+                svg.appendChild(text);
+            }
+            
+            // Legend title
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', legendX + legendWidth / 2);
+            title.setAttribute('y', legendY - 10);
+            title.setAttribute('class', 'legend-title');
+            title.setAttribute('text-anchor', 'middle');
+            title.textContent = 'アクセス数';
+            svg.appendChild(title);
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateHeatmap();
+        }
+
+        function animateHeatmap() {
+            const svg = document.getElementById('heatmapChart');
+            const cells = svg.querySelectorAll('.heatmap-cell');
+            const texts = svg.querySelectorAll('.cell-text');
+            
+            let startTime = null;
+            const duration = 2000 / animationSpeed;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Ease-out cubic function
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                // Animate cells in wave pattern
+                cells.forEach((cell, index) => {
+                    const row = Math.floor(index / hours.length);
+                    const col = index % hours.length;
+                    const waveDelay = (row + col) * 0.05;
+                    const cellProgress = Math.max(0, Math.min(1, (easeProgress - waveDelay) / (1 - waveDelay)));
+                    
+                    if (cellProgress > 0) {
+                        cell.setAttribute('opacity', cellProgress);
+                        
+                        // Scale animation
+                        const scale = 0.3 + 0.7 * cellProgress;
+                        cell.style.transform = `scale(${scale})`;
+                        cell.style.transformOrigin = 'center';
+                        
+                        // Text animation
+                        const text = texts[index];
+                        if (cellProgress > 0.7) {
+                            text.setAttribute('opacity', (cellProgress - 0.7) / 0.3);
+                        }
+                    }
+                });
+                
+                if (progress < 1 && isPlaying) {
+                    requestAnimationFrame(animate);
+                } else {
+                    isPlaying = false;
+                    document.getElementById('playBtn').style.opacity = '1';
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('heatmapChart');
+            const cells = svg.querySelectorAll('.heatmap-cell');
+            const texts = svg.querySelectorAll('.cell-text');
+            
+            cells.forEach(cell => {
+                cell.setAttribute('opacity', '0');
+                cell.style.transform = 'scale(0.3)';
+            });
+            
+            texts.forEach(text => {
+                text.setAttribute('opacity', '0');
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, data) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${data.day}曜日 ${data.hour}</strong><br>
+                アクセス数: ${data.value}
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <style>
+        .heatmap-cell {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .heatmap-cell:hover {
+            stroke-width: 2;
+            stroke: #333;
+        }
+        
+        .cell-text {
+            fill: #333;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            pointer-events: none;
+        }
+        
+        .axis-label {
+            fill: #666;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .axis-title {
+            fill: #333;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .legend-text {
+            fill: #666;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .legend-title {
+            fill: #333;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+    </style>
+</body>
+</html>

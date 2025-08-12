@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ウォーターフォールチャートアニメーション - 予算増減要因分析</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">予算増減要因分析</h2>
+        
+        <div class="chart-area">
+            <div class="waterfall-chart-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="waterfallChart">
+                    <!-- Waterfall bars will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for waterfall chart
+        const waterfallData = [
+            { label: '前期予算', value: 1000, type: 'start', cumulative: 1000 },
+            { label: '売上増加', value: 300, type: 'positive', cumulative: 1300 },
+            { label: '人件費削減', value: 150, type: 'positive', cumulative: 1450 },
+            { label: 'システム投資', value: -200, type: 'negative', cumulative: 1250 },
+            { label: 'マーケティング費', value: -100, type: 'negative', cumulative: 1150 },
+            { label: '設備投資', value: -180, type: 'negative', cumulative: 970 },
+            { label: '効率化効果', value: 80, type: 'positive', cumulative: 1050 },
+            { label: '当期予算', value: 1050, type: 'end', cumulative: 1050 }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const margin = { top: 40, right: 80, bottom: 80, left: 80 };
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        // Scales
+        const barWidth = (width / waterfallData.length) * 0.7;
+        const barSpacing = (width / waterfallData.length) * 0.3;
+        const maxValue = Math.max(...waterfallData.map(d => d.cumulative));
+        const minValue = Math.min(...waterfallData.map(d => d.cumulative));
+        const valueRange = maxValue - minValue;
+        const yScale = (value) => height - ((value - minValue) / valueRange) * height;
+
+        function initChart() {
+            const svg = document.getElementById('waterfallChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add background grid
+            addGrid(svg);
+            
+            // Add axes
+            addAxes(svg);
+            
+            // Add waterfall bars (initially hidden)
+            waterfallData.forEach((d, i) => {
+                addWaterfallBar(svg, d, i);
+            });
+            
+            // Add connecting lines (initially hidden)
+            addConnectingLines(svg);
+        }
+
+        function addGrid(svg) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'grid');
+            
+            // Horizontal grid lines
+            for (let i = 0; i <= 5; i++) {
+                const value = minValue + (valueRange / 5) * i;
+                const y = margin.top + yScale(value);
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', margin.left);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', margin.left + width);
+                line.setAttribute('y2', y);
+                line.setAttribute('class', 'grid-line');
+                g.appendChild(line);
+            }
+            
+            svg.appendChild(g);
+        }
+
+        function addAxes(svg) {
+            // X axis
+            const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            xAxis.setAttribute('x1', margin.left);
+            xAxis.setAttribute('y1', margin.top + height);
+            xAxis.setAttribute('x2', margin.left + width);
+            xAxis.setAttribute('y2', margin.top + height);
+            xAxis.setAttribute('class', 'axis');
+            svg.appendChild(xAxis);
+
+            // Y axis
+            const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            yAxis.setAttribute('x1', margin.left);
+            yAxis.setAttribute('y1', margin.top);
+            yAxis.setAttribute('x2', margin.left);
+            yAxis.setAttribute('y2', margin.top + height);
+            yAxis.setAttribute('class', 'axis');
+            svg.appendChild(yAxis);
+
+            // X axis labels
+            waterfallData.forEach((d, i) => {
+                const x = margin.left + (width / waterfallData.length) * i + (width / waterfallData.length) / 2;
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', x);
+                text.setAttribute('y', margin.top + height + 25);
+                text.setAttribute('class', 'label-text');
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('transform', `rotate(-45, ${x}, ${margin.top + height + 25})`);
+                text.textContent = d.label;
+                svg.appendChild(text);
+            });
+
+            // Y axis labels
+            for (let i = 0; i <= 5; i++) {
+                const value = minValue + (valueRange / 5) * i;
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', margin.left - 15);
+                text.setAttribute('y', margin.top + yScale(value) + 5);
+                text.setAttribute('class', 'axis-label');
+                text.setAttribute('text-anchor', 'end');
+                text.textContent = Math.round(value) + '万円';
+                svg.appendChild(text);
+            }
+        }
+
+        function addWaterfallBar(svg, data, index) {
+            const x = margin.left + (width / waterfallData.length) * index + barSpacing / 2;
+            
+            let barY, barHeight, barColor;
+            
+            if (data.type === 'start' || data.type === 'end') {
+                // Total bars (from bottom)
+                barY = margin.top + yScale(data.cumulative);
+                barHeight = yScale(minValue) - yScale(data.cumulative);
+                barColor = data.type === 'start' ? '#4ECDC4' : '#45B7D1';
+            } else {
+                // Change bars
+                const prevCumulative = index > 0 ? waterfallData[index - 1].cumulative : 0;
+                if (data.type === 'positive') {
+                    barY = margin.top + yScale(data.cumulative);
+                    barHeight = yScale(prevCumulative) - yScale(data.cumulative);
+                    barColor = '#96CEB4';
+                } else {
+                    barY = margin.top + yScale(prevCumulative);
+                    barHeight = yScale(data.cumulative) - yScale(prevCumulative);
+                    barColor = '#FF6B6B';
+                }
+            }
+            
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', x);
+            rect.setAttribute('y', barY + barHeight); // Start from bottom
+            rect.setAttribute('width', barWidth);
+            rect.setAttribute('height', 0); // Start with 0 height
+            rect.setAttribute('fill', barColor);
+            rect.setAttribute('stroke', '#fff');
+            rect.setAttribute('stroke-width', '2');
+            rect.setAttribute('class', 'waterfall-bar');
+            rect.setAttribute('data-target-y', barY);
+            rect.setAttribute('data-target-height', barHeight);
+            rect.setAttribute('opacity', '0.9');
+            
+            // Add hover events
+            rect.addEventListener('mouseenter', (e) => showTooltip(e, data));
+            rect.addEventListener('mouseleave', hideTooltip);
+            
+            svg.appendChild(rect);
+
+            // Value label
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', x + barWidth / 2);
+            text.setAttribute('y', barY - 10);
+            text.setAttribute('class', 'value-text');
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('opacity', '0');
+            
+            if (data.type === 'start' || data.type === 'end') {
+                text.textContent = data.cumulative + '万円';
+            } else {
+                text.textContent = (data.value > 0 ? '+' : '') + data.value + '万円';
+            }
+            
+            svg.appendChild(text);
+        }
+
+        function addConnectingLines(svg) {
+            for (let i = 0; i < waterfallData.length - 1; i++) {
+                const currentData = waterfallData[i];
+                const nextData = waterfallData[i + 1];
+                
+                // Skip connecting lines for start/end bars
+                if (currentData.type === 'start' || currentData.type === 'end' || 
+                    nextData.type === 'start' || nextData.type === 'end') {
+                    continue;
+                }
+                
+                const x1 = margin.left + (width / waterfallData.length) * i + barSpacing / 2 + barWidth;
+                const x2 = margin.left + (width / waterfallData.length) * (i + 1) + barSpacing / 2;
+                const y = margin.top + yScale(currentData.cumulative);
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y);
+                line.setAttribute('stroke', '#999');
+                line.setAttribute('stroke-width', '2');
+                line.setAttribute('stroke-dasharray', '5,5');
+                line.setAttribute('class', 'connecting-line');
+                line.setAttribute('opacity', '0');
+                
+                svg.appendChild(line);
+            }
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateBar(0);
+        }
+
+        function animateBar(index) {
+            if (index >= waterfallData.length || !isPlaying) {
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+                return;
+            }
+            
+            const svg = document.getElementById('waterfallChart');
+            const bars = svg.querySelectorAll('.waterfall-bar');
+            const texts = svg.querySelectorAll('.value-text');
+            const lines = svg.querySelectorAll('.connecting-line');
+            
+            const bar = bars[index];
+            const text = texts[index];
+            const targetY = parseFloat(bar.getAttribute('data-target-y'));
+            const targetHeight = parseFloat(bar.getAttribute('data-target-height'));
+            
+            let startTime = null;
+            const duration = 800 / animationSpeed;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Ease-out cubic function
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                const currentHeight = targetHeight * easeProgress;
+                bar.setAttribute('height', currentHeight);
+                bar.setAttribute('y', targetY + targetHeight - currentHeight);
+                
+                // Animate value text
+                text.setAttribute('opacity', easeProgress);
+                
+                // Animate connecting line if exists
+                if (index > 0 && index < lines.length + 1) {
+                    const lineIndex = index - 1;
+                    if (lines[lineIndex]) {
+                        lines[lineIndex].setAttribute('opacity', easeProgress);
+                    }
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Move to next bar after delay
+                    animationTimeout = setTimeout(() => {
+                        animateBar(index + 1);
+                    }, 200 / animationSpeed);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('waterfallChart');
+            const bars = svg.querySelectorAll('.waterfall-bar');
+            const texts = svg.querySelectorAll('.value-text');
+            const lines = svg.querySelectorAll('.connecting-line');
+            
+            bars.forEach(bar => {
+                const targetY = parseFloat(bar.getAttribute('data-target-y'));
+                const targetHeight = parseFloat(bar.getAttribute('data-target-height'));
+                bar.setAttribute('height', '0');
+                bar.setAttribute('y', targetY + targetHeight);
+            });
+            
+            texts.forEach(text => {
+                text.setAttribute('opacity', '0');
+            });
+            
+            lines.forEach(line => {
+                line.setAttribute('opacity', '0');
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, data) {
+            const tooltip = document.getElementById('tooltip');
+            let content = `<strong>${data.label}</strong><br>`;
+            
+            if (data.type === 'start' || data.type === 'end') {
+                content += `合計: ${data.cumulative}万円`;
+            } else {
+                content += `変動: ${data.value > 0 ? '+' : ''}${data.value}万円<br>`;
+                content += `累計: ${data.cumulative}万円`;
+            }
+            
+            tooltip.innerHTML = content;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <style>
+        .waterfall-bar {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .waterfall-bar:hover {
+            opacity: 0.8;
+            stroke-width: 3;
+        }
+        
+        .connecting-line {
+            pointer-events: none;
+        }
+        
+        .grid-line {
+            stroke: #e0e0e0;
+            stroke-width: 1;
+            opacity: 0.5;
+        }
+        
+        .axis {
+            stroke: #333;
+            stroke-width: 2;
+        }
+        
+        .label-text {
+            fill: #666;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .axis-label {
+            fill: #666;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .value-text {
+            fill: #333;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+    </style>
+</body>
+</html>

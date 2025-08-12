@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パーティクルエフェクト - データ可視化</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">データフロー・パーティクル可視化</h2>
+        
+        <div class="chart-area">
+            <canvas id="particleCanvas" style="width: 100%; height: 500px; border-radius: 15px; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);"></canvas>
+            
+            <!-- Data Sources -->
+            <div class="data-sources" style="position: absolute; top: 20px; left: 20px; z-index: 10;">
+                <div class="source-item" style="background: rgba(255, 255, 255, 0.9); padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 12px; font-weight: 600; color: #2c3e50;">
+                    <span style="display: inline-block; width: 12px; height: 12px; background: #FF6B6B; border-radius: 50%; margin-right: 8px;"></span>
+                    ユーザーデータ
+                </div>
+                <div class="source-item" style="background: rgba(255, 255, 255, 0.9); padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 12px; font-weight: 600; color: #2c3e50;">
+                    <span style="display: inline-block; width: 12px; height: 12px; background: #4ECDC4; border-radius: 50%; margin-right: 8px;"></span>
+                    売上データ
+                </div>
+                <div class="source-item" style="background: rgba(255, 255, 255, 0.9); padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 12px; font-weight: 600; color: #2c3e50;">
+                    <span style="display: inline-block; width: 12px; height: 12px; background: #45B7D1; border-radius: 50%; margin-right: 8px;"></span>
+                    ログデータ
+                </div>
+                <div class="source-item" style="background: rgba(255, 255, 255, 0.9); padding: 10px; border-radius: 10px; font-size: 12px; font-weight: 600; color: #2c3e50;">
+                    <span style="display: inline-block; width: 12px; height: 12px; background: #FECA57; border-radius: 50%; margin-right: 8px;"></span>
+                    APIデータ
+                </div>
+            </div>
+            
+            <!-- Stats Panel -->
+            <div class="stats-panel" style="position: absolute; top: 20px; right: 20px; z-index: 10; background: rgba(255, 255, 255, 0.9); padding: 15px; border-radius: 15px; min-width: 150px;">
+                <h4 style="font-size: 14px; margin-bottom: 10px; color: #2c3e50;">リアルタイム統計</h4>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-size: 12px; color: #666;">アクティブ:</span>
+                    <span id="activeCount" style="font-size: 12px; font-weight: 600; color: #27AE60;">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-size: 12px; color: #666;">処理済み:</span>
+                    <span id="processedCount" style="font-size: 12px; font-weight: 600; color: #3498DB;">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-size: 12px; color: #666;">処理速度:</span>
+                    <span id="processingRate" style="font-size: 12px; font-weight: 600; color: #E74C3C;">0/s</span>
+                </div>
+            </div>
+            
+            <!-- Central Processing Hub -->
+            <div class="processing-hub" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; pointer-events: none;">
+                <div style="width: 80px; height: 80px; border: 3px solid rgba(255, 255, 255, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);">
+                    <span style="font-size: 12px; color: white; font-weight: 600; text-align: center;">データ<br>処理センター</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+            <div class="speed-control" style="margin-left: 20px;">
+                <label for="particleCount">パーティクル数:</label>
+                <select id="particleCount" onchange="changeParticleCount()">
+                    <option value="50">少</option>
+                    <option value="100" selected>普通</option>
+                    <option value="200">多</option>
+                    <option value="300">最大</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class Particle {
+            constructor(canvas, type) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.type = type;
+                this.reset();
+                this.age = 0;
+                this.maxAge = 300 + Math.random() * 200;
+            }
+            
+            reset() {
+                // Start from edges based on type
+                const edge = Math.floor(Math.random() * 4);
+                const margin = 50;
+                
+                switch(edge) {
+                    case 0: // top
+                        this.x = Math.random() * (this.canvas.width - margin * 2) + margin;
+                        this.y = -10;
+                        break;
+                    case 1: // right
+                        this.x = this.canvas.width + 10;
+                        this.y = Math.random() * (this.canvas.height - margin * 2) + margin;
+                        break;
+                    case 2: // bottom
+                        this.x = Math.random() * (this.canvas.width - margin * 2) + margin;
+                        this.y = this.canvas.height + 10;
+                        break;
+                    case 3: // left
+                        this.x = -10;
+                        this.y = Math.random() * (this.canvas.height - margin * 2) + margin;
+                        break;
+                }
+                
+                // Target is the center
+                this.targetX = this.canvas.width / 2;
+                this.targetY = this.canvas.height / 2;
+                
+                // Calculate direction to center
+                const dx = this.targetX - this.x;
+                const dy = this.targetY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                this.speed = 0.5 + Math.random() * 1.5;
+                this.vx = (dx / distance) * this.speed;
+                this.vy = (dy / distance) * this.speed;
+                
+                // Add some randomness to path
+                this.vx += (Math.random() - 0.5) * 0.5;
+                this.vy += (Math.random() - 0.5) * 0.5;
+                
+                this.size = 2 + Math.random() * 3;
+                this.opacity = 0.7 + Math.random() * 0.3;
+                this.processed = false;
+                
+                // Color based on type
+                const colors = {
+                    'user': '#FF6B6B',
+                    'sales': '#4ECDC4', 
+                    'log': '#45B7D1',
+                    'api': '#FECA57'
+                };
+                this.color = colors[this.type];
+            }
+            
+            update() {
+                if (!this.processed) {
+                    // Move towards center
+                    this.x += this.vx * animationSpeed;
+                    this.y += this.vy * animationSpeed;
+                    
+                    // Check if reached center
+                    const centerDistance = Math.sqrt(
+                        (this.x - this.targetX) ** 2 + (this.y - this.targetY) ** 2
+                    );
+                    
+                    if (centerDistance < 50 && !this.processed) {
+                        this.processed = true;
+                        this.processedTime = Date.now();
+                        stats.processed++;
+                        
+                        // Create explosion effect
+                        this.createExplosion();
+                        
+                        // Set new target (exit point)
+                        const angle = Math.random() * Math.PI * 2;
+                        const exitDistance = 300 + Math.random() * 200;
+                        this.targetX = this.x + Math.cos(angle) * exitDistance;
+                        this.targetY = this.y + Math.sin(angle) * exitDistance;
+                        
+                        const dx = this.targetX - this.x;
+                        const dy = this.targetY - this.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        this.vx = (dx / distance) * this.speed * 2;
+                        this.vy = (dy / distance) * this.speed * 2;
+                        
+                        this.color = '#96CEB4'; // Change color after processing
+                    }
+                } else {
+                    // Move away from center
+                    this.x += this.vx * animationSpeed;
+                    this.y += this.vy * animationSpeed;
+                    this.opacity *= 0.98; // Fade out
+                }
+                
+                this.age++;
+                
+                // Reset if too old or out of bounds
+                if (this.age > this.maxAge || 
+                    this.x < -50 || this.x > this.canvas.width + 50 ||
+                    this.y < -50 || this.y > this.canvas.height + 50) {
+                    this.reset();
+                    this.age = 0;
+                }
+            }
+            
+            createExplosion() {
+                // Add small explosion particles
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    const speed = 2 + Math.random() * 3;
+                    
+                    explosionParticles.push({
+                        x: this.x,
+                        y: this.y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        size: 1 + Math.random() * 2,
+                        opacity: 0.8,
+                        color: this.color,
+                        life: 30
+                    });
+                }
+            }
+            
+            draw() {
+                this.ctx.save();
+                
+                // Add glow effect
+                this.ctx.shadowBlur = 10;
+                this.ctx.shadowColor = this.color;
+                
+                // Draw particle
+                this.ctx.globalAlpha = this.opacity;
+                this.ctx.fillStyle = this.color;
+                this.ctx.beginPath();
+                this.ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // Draw trail
+                if (!this.processed) {
+                    this.ctx.globalAlpha = this.opacity * 0.3;
+                    this.ctx.strokeStyle = this.color;
+                    this.ctx.lineWidth = 1;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.x - this.vx * 5, this.y - this.vy * 5);
+                    this.ctx.lineTo(this.x, this.y);
+                    this.ctx.stroke();
+                }
+                
+                this.ctx.restore();
+            }
+        }
+
+        // Animation variables
+        let canvas, ctx;
+        let particles = [];
+        let explosionParticles = [];
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let animationId;
+        let maxParticles = 100;
+        
+        // Statistics
+        let stats = {
+            active: 0,
+            processed: 0,
+            startTime: Date.now(),
+            lastProcessedCount: 0,
+            lastUpdate: Date.now()
+        };
+        
+        const particleTypes = ['user', 'sales', 'log', 'api'];
+
+        function initCanvas() {
+            canvas = document.getElementById('particleCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            resizeCanvas();
+            
+            // Initialize particles
+            for (let i = 0; i < maxParticles; i++) {
+                const type = particleTypes[Math.floor(Math.random() * particleTypes.length)];
+                particles.push(new Particle(canvas, type));
+            }
+        }
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+        }
+
+        function updateStats() {
+            const now = Date.now();
+            const activeCount = particles.filter(p => !p.processed).length;
+            const processingRate = Math.round((stats.processed - stats.lastProcessedCount) / ((now - stats.lastUpdate) / 1000));
+            
+            document.getElementById('activeCount').textContent = activeCount;
+            document.getElementById('processedCount').textContent = stats.processed;
+            document.getElementById('processingRate').textContent = processingRate;
+            
+            stats.lastProcessedCount = stats.processed;
+            stats.lastUpdate = now;
+        }
+
+        function animate() {
+            if (!isPlaying) return;
+            
+            // Clear canvas
+            ctx.fillStyle = 'rgba(30, 60, 114, 0.1)';
+            ctx.fillRect(0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
+            
+            // Update and draw particles
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            
+            // Update explosion particles
+            explosionParticles = explosionParticles.filter(particle => {
+                particle.x += particle.vx * animationSpeed;
+                particle.y += particle.vy * animationSpeed;
+                particle.opacity *= 0.95;
+                particle.life--;
+                
+                // Draw explosion particle
+                ctx.save();
+                ctx.globalAlpha = particle.opacity;
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+                
+                return particle.life > 0;
+            });
+            
+            // Draw connection lines to center
+            drawConnections();
+            
+            // Update stats periodically
+            if (Math.random() < 0.1) {
+                updateStats();
+            }
+            
+            animationId = requestAnimationFrame(animate);
+        }
+
+        function drawConnections() {
+            const centerX = canvas.width / window.devicePixelRatio / 2;
+            const centerY = canvas.height / window.devicePixelRatio / 2;
+            
+            particles.forEach(particle => {
+                if (!particle.processed) {
+                    const distance = Math.sqrt(
+                        (particle.x - centerX) ** 2 + (particle.y - centerY) ** 2
+                    );
+                    
+                    if (distance < 100) {
+                        ctx.save();
+                        ctx.globalAlpha = (100 - distance) / 100 * 0.3;
+                        ctx.strokeStyle = particle.color;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(particle.x, particle.y);
+                        ctx.lineTo(centerX, centerY);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+            });
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            stats.startTime = Date.now();
+            stats.processed = 0;
+            stats.lastProcessedCount = 0;
+            stats.lastUpdate = Date.now();
+            
+            animate();
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            cancelAnimationFrame(animationId);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            
+            // Reset particles
+            particles.forEach(particle => {
+                particle.reset();
+                particle.age = 0;
+            });
+            
+            // Clear explosion particles
+            explosionParticles = [];
+            
+            // Reset stats
+            stats.processed = 0;
+            stats.lastProcessedCount = 0;
+            updateStats();
+            
+            // Clear canvas
+            ctx.fillStyle = '#1e3c72';
+            ctx.fillRect(0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function changeParticleCount() {
+            const newCount = parseInt(document.getElementById('particleCount').value);
+            const wasPlaying = isPlaying;
+            
+            if (wasPlaying) pauseAnimation();
+            
+            if (newCount > particles.length) {
+                // Add particles
+                for (let i = particles.length; i < newCount; i++) {
+                    const type = particleTypes[Math.floor(Math.random() * particleTypes.length)];
+                    particles.push(new Particle(canvas, type));
+                }
+            } else if (newCount < particles.length) {
+                // Remove particles
+                particles = particles.slice(0, newCount);
+            }
+            
+            maxParticles = newCount;
+            
+            if (wasPlaying) playAnimation();
+        }
+
+        // Add mouse interaction
+        function addMouseInteraction() {
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isPlaying) return;
+                
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                particles.forEach(particle => {
+                    const dx = particle.x - mouseX;
+                    const dy = particle.y - mouseY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 100) {
+                        // Add repulsion force
+                        const force = (100 - distance) / 100 * 0.5;
+                        particle.vx += (dx / distance) * force;
+                        particle.vy += (dy / distance) * force;
+                    }
+                });
+            });
+            
+            canvas.addEventListener('click', (e) => {
+                if (!isPlaying) return;
+                
+                const rect = canvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+                
+                // Create attraction effect
+                particles.forEach(particle => {
+                    const dx = clickX - particle.x;
+                    const dy = clickY - particle.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 150) {
+                        const force = (150 - distance) / 150 * 2;
+                        particle.vx += (dx / distance) * force;
+                        particle.vy += (dy / distance) * force;
+                    }
+                });
+                
+                // Create click effect
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i / 12) * Math.PI * 2;
+                    const speed = 3 + Math.random() * 4;
+                    
+                    explosionParticles.push({
+                        x: clickX,
+                        y: clickY,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        size: 2 + Math.random() * 3,
+                        opacity: 0.9,
+                        color: '#FFD700',
+                        life: 40
+                    });
+                }
+            });
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            initCanvas();
+            addMouseInteraction();
+            
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            
+            // Update particle targets
+            particles.forEach(particle => {
+                if (!particle.processed) {
+                    particle.targetX = canvas.width / window.devicePixelRatio / 2;
+                    particle.targetY = canvas.height / window.devicePixelRatio / 2;
+                }
+            });
+        });
+        
+        // Add fullscreen effect on double click
+        canvas.addEventListener('dblclick', () => {
+            if (canvas.requestFullscreen) {
+                canvas.requestFullscreen();
+            }
+        });
+    </script>
+</body>
+</html>

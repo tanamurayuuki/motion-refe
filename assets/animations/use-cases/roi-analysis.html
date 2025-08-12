@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROI分析表示アニメーション - 投資収益率分析</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">投資収益率分析</h2>
+        
+        <div class="chart-area">
+            <div class="roi-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="roiChart">
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const roiData = {
+            summary: {
+                totalInvestment: 250,
+                totalReturn: 385,
+                netProfit: 135,
+                roiPercent: 54,
+                paybackMonths: 18
+            },
+            projects: [
+                { name: 'システム改善', investment: 80, returns: 120, roi: 50, risk: 'low' },
+                { name: 'マーケティング', investment: 60, returns: 105, roi: 75, risk: 'medium' },
+                { name: '新製品開発', investment: 110, returns: 160, roi: 45, risk: 'high' },
+            ],
+            timeline: [
+                { period: 'Q1', investment: 80, cumulativeReturn: 20 },
+                { period: 'Q2', investment: 60, cumulativeReturn: 65 },
+                { period: 'Q3', investment: 110, cumulativeReturn: 145 },
+                { period: 'Q4', investment: 0, cumulativeReturn: 245 },
+                { period: '予測Q5', investment: 0, cumulativeReturn: 320 },
+                { period: '予測Q6', investment: 0, cumulativeReturn: 385 }
+            ],
+            scenarios: [
+                { scenario: '楽観的', roi: 68, probability: 0.2 },
+                { scenario: 'ベースケース', roi: 54, probability: 0.6 },
+                { scenario: '悲観的', roi: 32, probability: 0.2 }
+            ]
+        };
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+
+        function initChart() {
+            const svg = document.getElementById('roiChart');
+            svg.innerHTML = '';
+            
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('width', '800');
+            bg.setAttribute('height', '400');
+            bg.setAttribute('fill', '#f8f9fa');
+            svg.appendChild(bg);
+            
+            addROISummary(svg);
+            addProjectROI(svg);
+            addROITimeline(svg);
+            addScenarioAnalysis(svg);
+        }
+
+        function addROISummary(svg) {
+            const summaryY = 30;
+            const summaryItems = [
+                { label: '総投資額', value: roiData.summary.totalInvestment, unit: '万円', color: '#e74c3c' },
+                { label: '総収益', value: roiData.summary.totalReturn, unit: '万円', color: '#27ae60' },
+                { label: '純利益', value: roiData.summary.netProfit, unit: '万円', color: '#3498db' },
+                { label: 'ROI', value: roiData.summary.roiPercent, unit: '%', color: '#f39c12' }
+            ];
+
+            summaryItems.forEach((item, index) => {
+                const x = 50 + index * 180;
+
+                const card = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                card.setAttribute('x', x);
+                card.setAttribute('y', summaryY);
+                card.setAttribute('width', '160');
+                card.setAttribute('height', '60');
+                card.setAttribute('fill', 'white');
+                card.setAttribute('stroke', item.color);
+                card.setAttribute('stroke-width', '2');
+                card.setAttribute('rx', '8');
+                card.setAttribute('opacity', '0');
+                card.setAttribute('class', 'summary-card');
+                svg.appendChild(card);
+
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', x + 15);
+                label.setAttribute('y', summaryY + 20);
+                label.setAttribute('class', 'summary-label');
+                label.setAttribute('opacity', '0');
+                label.textContent = item.label;
+                svg.appendChild(label);
+
+                const value = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                value.setAttribute('x', x + 15);
+                value.setAttribute('y', summaryY + 45);
+                value.setAttribute('class', 'summary-value');
+                value.setAttribute('fill', item.color);
+                value.setAttribute('opacity', '0');
+                value.textContent = '0';
+                value.setAttribute('data-target', item.value);
+                value.setAttribute('data-unit', item.unit);
+                svg.appendChild(value);
+            });
+        }
+
+        function addProjectROI(svg) {
+            const projX = 50;
+            const projY = 110;
+            const projWidth = 350;
+            const projHeight = 160;
+
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('x', projX);
+            bg.setAttribute('y', projY);
+            bg.setAttribute('width', projWidth);
+            bg.setAttribute('height', projHeight);
+            bg.setAttribute('fill', 'white');
+            bg.setAttribute('stroke', '#e1e8ed');
+            bg.setAttribute('rx', '8');
+            bg.setAttribute('opacity', '0');
+            bg.setAttribute('class', 'project-bg');
+            svg.appendChild(bg);
+
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', projX + 20);
+            title.setAttribute('y', projY + 25);
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = 'プロジェクト別ROI';
+            svg.appendChild(title);
+
+            roiData.projects.forEach((project, index) => {
+                const y = projY + 50 + index * 40;
+                const riskColors = { 'low': '#27ae60', 'medium': '#f39c12', 'high': '#e74c3c' };
+
+                // Project name
+                const name = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                name.setAttribute('x', projX + 20);
+                name.setAttribute('y', y);
+                name.setAttribute('class', 'project-name');
+                name.setAttribute('opacity', '0');
+                name.textContent = project.name;
+                svg.appendChild(name);
+
+                // Investment
+                const investment = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                investment.setAttribute('x', projX + 140);
+                investment.setAttribute('y', y);
+                investment.setAttribute('class', 'investment-text');
+                investment.setAttribute('opacity', '0');
+                investment.textContent = project.investment + '万円';
+                svg.appendChild(investment);
+
+                // ROI bar
+                const roiBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                roiBar.setAttribute('x', projX + 210);
+                roiBar.setAttribute('y', y - 8);
+                roiBar.setAttribute('width', '0');
+                roiBar.setAttribute('height', '12');
+                roiBar.setAttribute('fill', riskColors[project.risk]);
+                roiBar.setAttribute('opacity', '0');
+                roiBar.setAttribute('class', 'roi-bar');
+                roiBar.setAttribute('data-target-width', project.roi * 1.2);
+                svg.appendChild(roiBar);
+
+                // ROI percentage
+                const roiText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                roiText.setAttribute('x', projX + 300);
+                roiText.setAttribute('y', y);
+                roiText.setAttribute('class', 'roi-text');
+                roiText.setAttribute('fill', riskColors[project.risk);
+                roiText.setAttribute('opacity', '0');
+                roiText.textContent = project.roi + '%';
+                svg.appendChild(roiText);
+
+                // Risk indicator
+                const riskDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                riskDot.setAttribute('cx', projX + 320);
+                riskDot.setAttribute('cy', y - 5);
+                riskDot.setAttribute('r', '4');
+                riskDot.setAttribute('fill', riskColors[project.risk]);
+                riskDot.setAttribute('opacity', '0');
+                riskDot.setAttribute('class', 'risk-dot');
+                svg.appendChild(riskDot);
+            });
+
+            // Legend
+            const legendItems = [
+                { label: '低リスク', color: '#27ae60' },
+                { label: '中リスク', color: '#f39c12' },
+                { label: '高リスク', color: '#e74c3c' }
+            ];
+
+            legendItems.forEach((item, index) => {
+                const legendX = projX + 50 + index * 80;
+
+                const legendDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                legendDot.setAttribute('cx', legendX);
+                legendDot.setAttribute('cy', projY + projHeight - 20);
+                legendDot.setAttribute('r', '4');
+                legendDot.setAttribute('fill', item.color);
+                legendDot.setAttribute('opacity', '0');
+                legendDot.setAttribute('class', 'legend-dot');
+                svg.appendChild(legendDot);
+
+                const legendText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                legendText.setAttribute('x', legendX + 10);
+                legendText.setAttribute('y', projY + projHeight - 16);
+                legendText.setAttribute('class', 'legend-text');
+                legendText.setAttribute('opacity', '0');
+                legendText.textContent = item.label;
+                svg.appendChild(legendText);
+            });
+        }
+
+        function addROITimeline(svg) {
+            const timelineX = 420;
+            const timelineY = 110;
+            const timelineWidth = 330;
+            const timelineHeight = 160;
+
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('x', timelineX);
+            bg.setAttribute('y', timelineY);
+            bg.setAttribute('width', timelineWidth);
+            bg.setAttribute('height', timelineHeight);
+            bg.setAttribute('fill', 'white');
+            bg.setAttribute('stroke', '#e1e8ed');
+            bg.setAttribute('rx', '8');
+            bg.setAttribute('opacity', '0');
+            bg.setAttribute('class', 'timeline-bg');
+            svg.appendChild(bg);
+
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', timelineX + 20);
+            title.setAttribute('y', timelineY + 25);
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = 'ROI推移予測';
+            svg.appendChild(title);
+
+            // Investment line (negative)
+            let investmentPath = '';
+            let returnPath = '';
+            const maxValue = Math.max(...roiData.timeline.map(d => Math.max(d.investment, d.cumulativeReturn)));
+
+            roiData.timeline.forEach((data, index) => {
+                const x = timelineX + 30 + index * 45;
+                const investY = timelineY + 100 + (data.investment / maxValue) * 60;
+                const returnY = timelineY + 100 - (data.cumulativeReturn / maxValue) * 60;
+
+                if (index === 0) {
+                    investmentPath += `M ${x} ${timelineY + 100}`;
+                    returnPath += `M ${x} ${returnY}`;
+                } else {
+                    investmentPath += ` L ${x} ${investY}`;
+                    returnPath += ` L ${x} ${returnY}`;
+                }
+
+                // Period label
+                const periodLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                periodLabel.setAttribute('x', x);
+                periodLabel.setAttribute('y', timelineY + timelineHeight - 10);
+                periodLabel.setAttribute('text-anchor', 'middle');
+                periodLabel.setAttribute('class', 'period-label');
+                periodLabel.setAttribute('opacity', '0');
+                periodLabel.textContent = data.period;
+                svg.appendChild(periodLabel);
+
+                // Data points
+                const returnPoint = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                returnPoint.setAttribute('cx', x);
+                returnPoint.setAttribute('cy', returnY);
+                returnPoint.setAttribute('r', '3');
+                returnPoint.setAttribute('fill', '#27ae60');
+                returnPoint.setAttribute('opacity', '0');
+                returnPoint.setAttribute('class', 'return-point');
+                svg.appendChild(returnPoint);
+            });
+
+            const returnLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            returnLine.setAttribute('d', returnPath);
+            returnLine.setAttribute('fill', 'none');
+            returnLine.setAttribute('stroke', '#27ae60');
+            returnLine.setAttribute('stroke-width', '3');
+            returnLine.setAttribute('opacity', '0');
+            returnLine.setAttribute('class', 'return-line');
+            svg.appendChild(returnLine);
+
+            // Break-even line
+            const breakEvenY = timelineY + 100;
+            const breakEvenLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            breakEvenLine.setAttribute('x1', timelineX + 30);
+            breakEvenLine.setAttribute('y1', breakEvenY);
+            breakEvenLine.setAttribute('x2', timelineX + 300);
+            breakEvenLine.setAttribute('y2', breakEvenY);
+            breakEvenLine.setAttribute('stroke', '#95a5a6');
+            breakEvenLine.setAttribute('stroke-dasharray', '5,5');
+            breakEvenLine.setAttribute('opacity', '0');
+            breakEvenLine.setAttribute('class', 'break-even-line');
+            svg.appendChild(breakEvenLine);
+        }
+
+        function addScenarioAnalysis(svg) {
+            const scenarioX = 50;
+            const scenarioY = 290;
+            const scenarioWidth = 700;
+            const scenarioHeight = 80;
+
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('x', scenarioX);
+            bg.setAttribute('y', scenarioY);
+            bg.setAttribute('width', scenarioWidth);
+            bg.setAttribute('height', scenarioHeight);
+            bg.setAttribute('fill', 'white');
+            bg.setAttribute('stroke', '#e1e8ed');
+            bg.setAttribute('rx', '8');
+            bg.setAttribute('opacity', '0');
+            bg.setAttribute('class', 'scenario-bg');
+            svg.appendChild(bg);
+
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', scenarioX + 20);
+            title.setAttribute('y', scenarioY + 25);
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = 'シナリオ分析';
+            svg.appendChild(title);
+
+            roiData.scenarios.forEach((scenario, index) => {
+                const x = scenarioX + 50 + index * 200;
+
+                const scenarioName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                scenarioName.setAttribute('x', x);
+                scenarioName.setAttribute('y', scenarioY + 45);
+                scenarioName.setAttribute('class', 'scenario-name');
+                scenarioName.setAttribute('opacity', '0');
+                scenarioName.textContent = scenario.scenario;
+                svg.appendChild(scenarioName);
+
+                const roiValue = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                roiValue.setAttribute('x', x);
+                roiValue.setAttribute('y', scenarioY + 62);
+                roiValue.setAttribute('class', 'scenario-roi');
+                roiValue.setAttribute('opacity', '0');
+                roiValue.textContent = 'ROI: 0%';
+                roiValue.setAttribute('data-target', scenario.roi);
+                svg.appendChild(roiValue);
+
+                const probability = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                probability.setAttribute('x', x + 120);
+                probability.setAttribute('y', scenarioY + 55);
+                probability.setAttribute('class', 'scenario-prob');
+                probability.setAttribute('opacity', '0');
+                probability.textContent = `確率: ${(scenario.probability * 100).toFixed(0)}%`;
+                svg.appendChild(probability);
+            });
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateROIAnalysis();
+        }
+
+        function animateROIAnalysis() {
+            const svg = document.getElementById('roiChart');
+            
+            // Phase 1: ROI Summary
+            setTimeout(() => {
+                const summaryCards = svg.querySelectorAll('.summary-card');
+                const summaryLabels = svg.querySelectorAll('.summary-label');
+                const summaryValues = svg.querySelectorAll('.summary-value');
+
+                summaryCards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.setAttribute('opacity', '1');
+                        summaryLabels[index].setAttribute('opacity', '1');
+                        
+                        const valueElement = summaryValues[index];
+                        const target = parseFloat(valueElement.getAttribute('data-target'));
+                        const unit = valueElement.getAttribute('data-unit');
+                        
+                        let current = 0;
+                        const increment = target / 40;
+                        
+                        const counter = setInterval(() => {
+                            current += increment;
+                            if (current >= target) {
+                                current = target;
+                                clearInterval(counter);
+                            }
+                            valueElement.textContent = Math.round(current) + unit;
+                            valueElement.setAttribute('opacity', '1');
+                        }, 30);
+                    }, index * 200);
+                });
+            }, 0);
+
+            // Phase 2: Project ROI
+            setTimeout(() => {
+                svg.querySelector('.project-bg').setAttribute('opacity', '1');
+                svg.querySelectorAll('.section-title')[0].setAttribute('opacity', '1');
+
+                const projectElements = svg.querySelectorAll('.project-name, .investment-text, .roi-text, .risk-dot');
+                const roiBars = svg.querySelectorAll('.roi-bar');
+
+                projectElements.forEach((element, index) => {
+                    setTimeout(() => {
+                        element.setAttribute('opacity', '1');
+                    }, index * 100);
+                });
+
+                roiBars.forEach((bar, index) => {
+                    setTimeout(() => {
+                        const targetWidth = bar.getAttribute('data-target-width');
+                        bar.setAttribute('width', targetWidth);
+                        bar.setAttribute('opacity', '0.8');
+                    }, index * 300);
+                });
+
+                // Show legend
+                setTimeout(() => {
+                    svg.querySelectorAll('.legend-dot, .legend-text').forEach(item => {
+                        item.setAttribute('opacity', '1');
+                    });
+                }, 1000);
+            }, 1500);
+
+            // Phase 3: Timeline
+            setTimeout(() => {
+                svg.querySelector('.timeline-bg').setAttribute('opacity', '1');
+                svg.querySelectorAll('.section-title')[1].setAttribute('opacity', '1');
+
+                svg.querySelector('.break-even-line').setAttribute('opacity', '1');
+                svg.querySelector('.return-line').setAttribute('opacity', '1');
+
+                svg.querySelectorAll('.period-label, .return-point').forEach((element, index) => {
+                    setTimeout(() => {
+                        element.setAttribute('opacity', '1');
+                    }, index * 100);
+                });
+            }, 3000);
+
+            // Phase 4: Scenarios
+            setTimeout(() => {
+                svg.querySelector('.scenario-bg').setAttribute('opacity', '1');
+                svg.querySelectorAll('.section-title')[2].setAttribute('opacity', '1');
+
+                const scenarioNames = svg.querySelectorAll('.scenario-name');
+                const scenarioROIs = svg.querySelectorAll('.scenario-roi');
+                const scenarioProbs = svg.querySelectorAll('.scenario-prob');
+
+                scenarioNames.forEach((name, index) => {
+                    setTimeout(() => {
+                        name.setAttribute('opacity', '1');
+                        scenarioProbs[index].setAttribute('opacity', '1');
+                        
+                        const roiElement = scenarioROIs[index];
+                        const target = parseInt(roiElement.getAttribute('data-target'));
+                        
+                        let current = 0;
+                        const increment = target / 20;
+                        
+                        const counter = setInterval(() => {
+                            current += increment;
+                            if (current >= target) {
+                                current = target;
+                                clearInterval(counter);
+                            }
+                            roiElement.textContent = `ROI: ${Math.round(current)}%`;
+                            roiElement.setAttribute('opacity', '1');
+                        }, 50);
+                    }, index * 200);
+                });
+
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+            }, 4500);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            const svg = document.getElementById('roiChart');
+            const allElements = svg.querySelectorAll('*:not(rect:first-child)');
+            
+            allElements.forEach(element => {
+                element.setAttribute('opacity', '0');
+                
+                if (element.classList.contains('summary-value')) {
+                    element.textContent = '0';
+                }
+                if (element.classList.contains('scenario-roi')) {
+                    element.textContent = 'ROI: 0%';
+                }
+                if (element.classList.contains('roi-bar')) {
+                    element.setAttribute('width', '0');
+                }
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        window.addEventListener('load', () => {
+            initChart();
+            setTimeout(() => playAnimation(), 1000);
+        });
+    </script>
+
+    <style>
+        .summary-label {
+            fill: #7f8c8d;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .summary-value {
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .section-title {
+            fill: #2c3e50;
+            font-size: 13px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .project-name {
+            fill: #2c3e50;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .investment-text {
+            fill: #7f8c8d;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .roi-text {
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .legend-text {
+            fill: #7f8c8d;
+            font-size: 9px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .period-label {
+            fill: #7f8c8d;
+            font-size: 9px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .scenario-name {
+            fill: #2c3e50;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .scenario-roi {
+            fill: #27ae60;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .scenario-prob {
+            fill: #7f8c8d;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .roi-bar, .return-point {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .return-point:hover {
+            r: 5;
+        }
+    </style>
+</body>
+</html>

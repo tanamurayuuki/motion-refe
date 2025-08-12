@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+        .test-result { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>JavaScript動作テスト</h1>
+    
+    <button id="test-btn-1">テストボタン1</button>
+    <button id="test-btn-2" class="category-item" data-id="001">カテゴリアイテムテスト</button>
+    <button id="test-btn-3" class="difficulty-filter-btn" data-difficulty="初級">難易度フィルターテスト</button>
+    
+    <div id="test-results" class="test-result">
+        結果がここに表示されます
+    </div>
+
+    <script>
+        console.log('Debug HTML loaded');
+        
+        // 基本的なイベントテスト
+        document.getElementById('test-btn-1').addEventListener('click', function() {
+            console.log('Test button 1 clicked');
+            document.getElementById('test-results').innerHTML += '<br>テストボタン1がクリックされました: ' + new Date().toLocaleTimeString();
+        });
+
+        // メインのscript.jsを読み込む前の状態をテスト
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded in debug.html');
+            
+            // カテゴリアイテムのクリックイベント（メインと同じ）
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('category-item')) {
+                    console.log('Category item clicked:', e.target.dataset.id);
+                    document.getElementById('test-results').innerHTML += '<br>カテゴリアイテムクリック: ' + e.target.dataset.id;
+                }
+                
+                if (e.target.classList.contains('difficulty-filter-btn')) {
+                    console.log('Difficulty filter clicked:', e.target.dataset.difficulty);
+                    document.getElementById('test-results').innerHTML += '<br>難易度フィルタークリック: ' + e.target.dataset.difficulty;
+                }
+            });
+            
+            document.getElementById('test-results').innerHTML = 'DOMContentLoaded完了 - ' + new Date().toLocaleTimeString();
+        });
+    </script>
+</body>
+</html>

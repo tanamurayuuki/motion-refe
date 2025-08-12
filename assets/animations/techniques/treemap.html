@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ツリーマップアニメーション - 部門別予算配分</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">部門別予算配分</h2>
+        
+        <div class="chart-area">
+            <div class="treemap-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="treemapChart">
+                    <!-- Treemap rectangles will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Hierarchical budget data
+        const treemapData = {
+            name: "会社全体",
+            value: 1000,
+            children: [
+                {
+                    name: "営業部",
+                    value: 350,
+                    color: "#FF6B6B",
+                    children: [
+                        { name: "国内営業", value: 200, color: "#FF8E8E" },
+                        { name: "海外営業", value: 100, color: "#FFB1B1" },
+                        { name: "営業企画", value: 50, color: "#FFD4D4" }
+                    ]
+                },
+                {
+                    name: "開発部",
+                    value: 280,
+                    color: "#4ECDC4",
+                    children: [
+                        { name: "システム開発", value: 120, color: "#6ED5D1" },
+                        { name: "製品開発", value: 100, color: "#8EDDD9" },
+                        { name: "研究開発", value: 60, color: "#AEE5E1" }
+                    ]
+                },
+                {
+                    name: "マーケティング部",
+                    value: 200,
+                    color: "#45B7D1",
+                    children: [
+                        { name: "デジタル広告", value: 80, color: "#68C5D8" },
+                        { name: "イベント企画", value: 70, color: "#8BD3DF" },
+                        { name: "PR・広報", value: 50, color: "#AEE1E6" }
+                    ]
+                },
+                {
+                    name: "管理部",
+                    value: 170,
+                    color: "#96CEB4",
+                    children: [
+                        { name: "人事・総務", value: 70, color: "#A8D6C1" },
+                        { name: "経理・財務", value: 60, color: "#BADECE" },
+                        { name: "法務・監査", value: 40, color: "#CCE6DB" }
+                    ]
+                }
+            ]
+        };
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        // Treemap layout
+        let treemapLayout = [];
+
+        function initChart() {
+            const svg = document.getElementById('treemapChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Calculate treemap layout
+            calculateTreemapLayout();
+            
+            // Add treemap rectangles (initially hidden)
+            addTreemapRectangles(svg);
+        }
+
+        function calculateTreemapLayout() {
+            treemapLayout = [];
+            const totalValue = treemapData.value;
+            let currentX = margin.left;
+            let currentY = margin.top;
+            
+            // First level: main departments
+            treemapData.children.forEach((dept, deptIndex) => {
+                const deptWidth = (dept.value / totalValue) * width;
+                const deptHeight = height;
+                
+                // Department rectangle
+                treemapLayout.push({
+                    name: dept.name,
+                    value: dept.value,
+                    color: dept.color,
+                    x: currentX,
+                    y: currentY,
+                    width: deptWidth,
+                    height: deptHeight,
+                    level: 0,
+                    parent: null
+                });
+                
+                // Second level: subdivisions
+                let subCurrentY = currentY;
+                const subTotalValue = dept.value;
+                
+                dept.children.forEach((sub, subIndex) => {
+                    const subHeight = (sub.value / subTotalValue) * deptHeight;
+                    
+                    treemapLayout.push({
+                        name: sub.name,
+                        value: sub.value,
+                        color: sub.color,
+                        x: currentX,
+                        y: subCurrentY,
+                        width: deptWidth,
+                        height: subHeight,
+                        level: 1,
+                        parent: dept.name
+                    });
+                    
+                    subCurrentY += subHeight;
+                });
+                
+                currentX += deptWidth;
+            });
+        }
+
+        function addTreemapRectangles(svg) {
+            treemapLayout.forEach((item, index) => {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'treemap-item');
+                g.setAttribute('data-level', item.level);
+                g.setAttribute('data-index', index);
+                
+                // Rectangle
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', item.x);
+                rect.setAttribute('y', item.y);
+                rect.setAttribute('width', 0); // Start with 0 width
+                rect.setAttribute('height', 0); // Start with 0 height
+                rect.setAttribute('fill', item.color);
+                rect.setAttribute('stroke', '#fff');
+                rect.setAttribute('stroke-width', item.level === 0 ? '3' : '2');
+                rect.setAttribute('opacity', '0');
+                rect.setAttribute('class', 'treemap-rect');
+                rect.setAttribute('data-target-width', item.width);
+                rect.setAttribute('data-target-height', item.height);
+                g.appendChild(rect);
+                
+                // Label text (department/division name)
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', item.x + item.width / 2);
+                text.setAttribute('y', item.y + item.height / 2 - 10);
+                text.setAttribute('class', item.level === 0 ? 'dept-label' : 'sub-label');
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('opacity', '0');
+                text.textContent = item.name;
+                g.appendChild(text);
+                
+                // Value text
+                const valueText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                valueText.setAttribute('x', item.x + item.width / 2);
+                valueText.setAttribute('y', item.y + item.height / 2 + 8);
+                valueText.setAttribute('class', 'value-label');
+                valueText.setAttribute('text-anchor', 'middle');
+                valueText.setAttribute('opacity', '0');
+                valueText.textContent = item.value + '万円';
+                g.appendChild(valueText);
+                
+                // Percentage text
+                const percentage = Math.round((item.value / treemapData.value) * 100);
+                const percentText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                percentText.setAttribute('x', item.x + item.width / 2);
+                percentText.setAttribute('y', item.y + item.height / 2 + 22);
+                percentText.setAttribute('class', 'percent-label');
+                percentText.setAttribute('text-anchor', 'middle');
+                percentText.setAttribute('opacity', '0');
+                percentText.textContent = `(${percentage}%)`;
+                g.appendChild(percentText);
+                
+                // Add hover events
+                g.addEventListener('mouseenter', (e) => showTooltip(e, item));
+                g.addEventListener('mouseleave', hideTooltip);
+                
+                svg.appendChild(g);
+            });
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            // First animate level 0 (departments), then level 1 (subdivisions)
+            animateLevel(0);
+        }
+
+        function animateLevel(level) {
+            const svg = document.getElementById('treemapChart');
+            const items = svg.querySelectorAll(`.treemap-item[data-level="${level}"]`);
+            
+            if (items.length === 0) {
+                if (level === 0) {
+                    // Move to level 1 after level 0 completes
+                    setTimeout(() => {
+                        animateLevel(1);
+                    }, 500 / animationSpeed);
+                } else {
+                    // Animation complete
+                    isPlaying = false;
+                    document.getElementById('playBtn').style.opacity = '1';
+                }
+                return;
+            }
+            
+            let itemIndex = 0;
+            
+            function animateNextItem() {
+                if (itemIndex >= items.length || !isPlaying) {
+                    if (level === 0 && isPlaying) {
+                        // Move to level 1 after level 0 completes
+                        setTimeout(() => {
+                            animateLevel(1);
+                        }, 500 / animationSpeed);
+                    } else if (level === 1) {
+                        isPlaying = false;
+                        document.getElementById('playBtn').style.opacity = '1';
+                    }
+                    return;
+                }
+                
+                const item = items[itemIndex];
+                const rect = item.querySelector('.treemap-rect');
+                const texts = item.querySelectorAll('text');
+                
+                const targetWidth = parseFloat(rect.getAttribute('data-target-width'));
+                const targetHeight = parseFloat(rect.getAttribute('data-target-height'));
+                
+                let startTime = null;
+                const duration = level === 0 ? 1000 / animationSpeed : 800 / animationSpeed;
+                
+                function animate(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    
+                    // Ease-out cubic function
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+                    
+                    // Animate rectangle
+                    rect.setAttribute('opacity', easeProgress * 0.8);
+                    rect.setAttribute('width', targetWidth * easeProgress);
+                    rect.setAttribute('height', targetHeight * easeProgress);
+                    
+                    // Animate text labels
+                    if (easeProgress > 0.6) {
+                        const textProgress = (easeProgress - 0.6) / 0.4;
+                        texts.forEach(text => {
+                            text.setAttribute('opacity', textProgress);
+                        });
+                    }
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        itemIndex++;
+                        // Small delay between items
+                        setTimeout(() => {
+                            animateNextItem();
+                        }, level === 0 ? 200 / animationSpeed : 100 / animationSpeed);
+                    }
+                }
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animateNextItem();
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('treemapChart');
+            const rects = svg.querySelectorAll('.treemap-rect');
+            const texts = svg.querySelectorAll('text');
+            
+            rects.forEach(rect => {
+                rect.setAttribute('opacity', '0');
+                rect.setAttribute('width', '0');
+                rect.setAttribute('height', '0');
+            });
+            
+            texts.forEach(text => {
+                text.setAttribute('opacity', '0');
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, item) {
+            const tooltip = document.getElementById('tooltip');
+            const percentage = Math.round((item.value / treemapData.value) * 100);
+            
+            tooltip.innerHTML = `
+                <strong>${item.name}</strong><br>
+                予算: ${item.value}万円<br>
+                割合: ${percentage}%<br>
+                ${item.parent ? `所属: ${item.parent}` : '部門'}
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <style>
+        .treemap-item {
+            cursor: pointer;
+        }
+        
+        .treemap-rect {
+            transition: all 0.3s ease;
+        }
+        
+        .treemap-rect:hover {
+            opacity: 0.9 !important;
+            stroke-width: 4;
+        }
+        
+        .dept-label {
+            fill: #333;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .sub-label {
+            fill: #333;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .value-label {
+            fill: #333;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .percent-label {
+            fill: #666;
+            font-size: 9px;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+        }
+        
+        /* Responsive text sizing */
+        @media (max-width: 600px) {
+            .dept-label {
+                font-size: 12px;
+            }
+            
+            .sub-label {
+                font-size: 9px;
+            }
+            
+            .value-label {
+                font-size: 8px;
+            }
+            
+            .percent-label {
+                font-size: 7px;
+            }
+        }
+        
+        /* Hide text on very small rectangles */
+        .treemap-item[data-level="1"] text {
+            display: block;
+        }
+        
+        .treemap-rect[width="0"] + text {
+            display: none;
+        }
+    </style>
+</body>
+</html>

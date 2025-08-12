@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>顧客満足度調査アニメーション - 顧客体験分析</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">顧客体験分析</h2>
+        
+        <div class="chart-area">
+            <div class="survey-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="surveyChart">
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const surveyData = {
+            overall: { score: 4.2, responses: 1247 },
+            categories: [
+                { name: '製品品質', score: 4.5, responses: 1247, icon: '⭐' },
+                { name: 'カスタマーサービス', score: 4.1, responses: 1247, icon: '🎧' },
+                { name: '価格満足度', score: 3.8, responses: 1247, icon: '💰' },
+                { name: '配送・納期', score: 4.3, responses: 1247, icon: '🚚' },
+                { name: 'ウェブサイト', score: 3.9, responses: 1247, icon: '💻' }
+            ],
+            demographics: [
+                { segment: '20-30歳', percentage: 25, satisfaction: 4.1 },
+                { segment: '31-40歳', percentage: 35, satisfaction: 4.3 },
+                { segment: '41-50歳', percentage: 28, satisfaction: 4.0 },
+                { segment: '51歳以上', percentage: 12, satisfaction: 4.4 }
+            ],
+            improvements: [
+                { area: '価格競争力', priority: 8.5, effort: 6.2 },
+                { area: 'サポート対応時間', priority: 7.8, effort: 4.5 },
+                { area: 'ウェブサイトUI', priority: 6.9, effort: 5.8 },
+                { area: '製品ラインナップ', priority: 7.2, effort: 8.1 }
+            ]
+        };
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+
+        function initChart() {
+            const svg = document.getElementById('surveyChart');
+            svg.innerHTML = '';
+            
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('width', '800');
+            bg.setAttribute('height', '400');
+            bg.setAttribute('fill', '#f8f9fa');
+            svg.appendChild(bg);
+            
+            addOverallScore(svg);
+            addCategoryRatings(svg);
+            addDemographics(svg);
+            addImprovementMatrix(svg);
+        }
+
+        function addOverallScore(svg) {
+            const centerX = 150;
+            const centerY = 80;
+            const radius = 50;
+
+            // Gauge background
+            const gaugeBg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            gaugeBg.setAttribute('cx', centerX);
+            gaugeBg.setAttribute('cy', centerY);
+            gaugeBg.setAttribute('r', radius);
+            gaugeBg.setAttribute('fill', 'none');
+            gaugeBg.setAttribute('stroke', '#ecf0f1');
+            gaugeBg.setAttribute('stroke-width', '8');
+            gaugeBg.setAttribute('opacity', '0');
+            gaugeBg.setAttribute('class', 'gauge-bg');
+            svg.appendChild(gaugeBg);
+
+            // Gauge progress
+            const circumference = 2 * Math.PI * radius;
+            const progressValue = (surveyData.overall.score / 5) * circumference;
+
+            const gaugeProgress = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            gaugeProgress.setAttribute('cx', centerX);
+            gaugeProgress.setAttribute('cy', centerY);
+            gaugeProgress.setAttribute('r', radius);
+            gaugeProgress.setAttribute('fill', 'none');
+            gaugeProgress.setAttribute('stroke', '#27ae60');
+            gaugeProgress.setAttribute('stroke-width', '8');
+            gaugeProgress.setAttribute('stroke-linecap', 'round');
+            gaugeProgress.setAttribute('stroke-dasharray', circumference);
+            gaugeProgress.setAttribute('stroke-dashoffset', circumference);
+            gaugeProgress.setAttribute('transform', `rotate(-90 ${centerX} ${centerY})`);
+            gaugeProgress.setAttribute('opacity', '0');
+            gaugeProgress.setAttribute('class', 'gauge-progress');
+            gaugeProgress.setAttribute('data-target-offset', circumference - progressValue);
+            svg.appendChild(gaugeProgress);
+
+            // Score text
+            const scoreText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            scoreText.setAttribute('x', centerX);
+            scoreText.setAttribute('y', centerY + 5);
+            scoreText.setAttribute('text-anchor', 'middle');
+            scoreText.setAttribute('class', 'overall-score');
+            scoreText.setAttribute('opacity', '0');
+            scoreText.textContent = '0.0';
+            scoreText.setAttribute('data-target', surveyData.overall.score);
+            svg.appendChild(scoreText);
+
+            // Label
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', centerX);
+            label.setAttribute('y', centerY + 25);
+            label.setAttribute('text-anchor', 'middle');
+            label.setAttribute('class', 'overall-label');
+            label.setAttribute('opacity', '0');
+            label.textContent = '総合満足度';
+            svg.appendChild(label);
+
+            // Response count
+            const responseCount = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            responseCount.setAttribute('x', centerX);
+            responseCount.setAttribute('y', centerY + 40);
+            responseCount.setAttribute('text-anchor', 'middle');
+            responseCount.setAttribute('class', 'response-count');
+            responseCount.setAttribute('opacity', '0');
+            responseCount.textContent = `回答数: ${surveyData.overall.responses.toLocaleString()}件`;
+            svg.appendChild(responseCount);
+        }
+
+        function addCategoryRatings(svg) {
+            const startX = 300;
+            const startY = 30;
+
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', startX + 150);
+            title.setAttribute('y', startY);
+            title.setAttribute('text-anchor', 'middle');
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = 'カテゴリ別評価';
+            svg.appendChild(title);
+
+            surveyData.categories.forEach((category, index) => {
+                const x = startX;
+                const y = startY + 30 + index * 35;
+
+                // Category icon
+                const icon = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                icon.setAttribute('x', x);
+                icon.setAttribute('y', y + 5);
+                icon.setAttribute('class', 'category-icon');
+                icon.setAttribute('opacity', '0');
+                icon.textContent = category.icon;
+                svg.appendChild(icon);
+
+                // Category name
+                const name = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                name.setAttribute('x', x + 30);
+                name.setAttribute('y', y + 5);
+                name.setAttribute('class', 'category-name');
+                name.setAttribute('opacity', '0');
+                name.textContent = category.name;
+                svg.appendChild(name);
+
+                // Rating stars
+                for (let i = 1; i <= 5; i++) {
+                    const star = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    star.setAttribute('x', x + 200 + i * 20);
+                    star.setAttribute('y', y + 5);
+                    star.setAttribute('class', i <= category.score ? 'star-filled' : 'star-empty');
+                    star.setAttribute('opacity', '0');
+                    star.textContent = '★';
+                    svg.appendChild(star);
+                }
+
+                // Score text
+                const scoreText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                scoreText.setAttribute('x', x + 320);
+                scoreText.setAttribute('y', y + 5);
+                scoreText.setAttribute('class', 'category-score');
+                scoreText.setAttribute('opacity', '0');
+                scoreText.textContent = '0.0';
+                scoreText.setAttribute('data-target', category.score);
+                svg.appendChild(scoreText);
+            });
+        }
+
+        function addDemographics(svg) {
+            const demoX = 50;
+            const demoY = 200;
+            const demoWidth = 300;
+            const demoHeight = 180;
+
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('x', demoX);
+            bg.setAttribute('y', demoY);
+            bg.setAttribute('width', demoWidth);
+            bg.setAttribute('height', demoHeight);
+            bg.setAttribute('fill', 'white');
+            bg.setAttribute('stroke', '#e1e8ed');
+            bg.setAttribute('rx', '8');
+            bg.setAttribute('opacity', '0');
+            bg.setAttribute('class', 'demo-bg');
+            svg.appendChild(bg);
+
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', demoX + 20);
+            title.setAttribute('y', demoY + 25);
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = '年代別分析';
+            svg.appendChild(title);
+
+            surveyData.demographics.forEach((demo, index) => {
+                const y = demoY + 60 + index * 35;
+
+                // Age segment
+                const segment = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                segment.setAttribute('x', demoX + 20);
+                segment.setAttribute('y', y);
+                segment.setAttribute('class', 'demo-segment');
+                segment.setAttribute('opacity', '0');
+                segment.textContent = demo.segment;
+                svg.appendChild(segment);
+
+                // Percentage bar
+                const percentBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                percentBar.setAttribute('x', demoX + 100);
+                percentBar.setAttribute('y', y - 10);
+                percentBar.setAttribute('width', '0');
+                percentBar.setAttribute('height', '15');
+                percentBar.setAttribute('fill', '#3498db');
+                percentBar.setAttribute('opacity', '0');
+                percentBar.setAttribute('class', 'percent-bar');
+                percentBar.setAttribute('data-target-width', demo.percentage * 3);
+                svg.appendChild(percentBar);
+
+                // Percentage text
+                const percentText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                percentText.setAttribute('x', demoX + 210);
+                percentText.setAttribute('y', y);
+                percentText.setAttribute('class', 'percent-text');
+                percentText.setAttribute('opacity', '0');
+                percentText.textContent = demo.percentage + '%';
+                svg.appendChild(percentText);
+
+                // Satisfaction score
+                const satScore = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                satScore.setAttribute('x', demoX + 250);
+                satScore.setAttribute('y', y);
+                satScore.setAttribute('class', 'sat-score');
+                satScore.setAttribute('opacity', '0');
+                satScore.textContent = demo.satisfaction.toFixed(1);
+                svg.appendChild(satScore);
+            });
+        }
+
+        function addImprovementMatrix(svg) {
+            const matrixX = 400;
+            const matrixY = 200;
+            const matrixWidth = 350;
+            const matrixHeight = 180;
+
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('x', matrixX);
+            bg.setAttribute('y', matrixY);
+            bg.setAttribute('width', matrixWidth);
+            bg.setAttribute('height', matrixHeight);
+            bg.setAttribute('fill', 'white');
+            bg.setAttribute('stroke', '#e1e8ed');
+            bg.setAttribute('rx', '8');
+            bg.setAttribute('opacity', '0');
+            bg.setAttribute('class', 'matrix-bg');
+            svg.appendChild(bg);
+
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', matrixX + 20);
+            title.setAttribute('y', matrixY + 25);
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = '改善優先度マトリクス';
+            svg.appendChild(title);
+
+            // Scatter plot
+            surveyData.improvements.forEach((improvement, index) => {
+                const x = matrixX + 50 + (improvement.priority / 10) * 250;
+                const y = matrixY + 150 - (improvement.effort / 10) * 100;
+
+                const point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                point.setAttribute('cx', x);
+                point.setAttribute('cy', y);
+                point.setAttribute('r', '6');
+                point.setAttribute('fill', '#e74c3c');
+                point.setAttribute('opacity', '0');
+                point.setAttribute('class', 'improvement-point');
+                svg.appendChild(point);
+
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', x + 10);
+                label.setAttribute('y', y + 4);
+                label.setAttribute('class', 'improvement-label');
+                label.setAttribute('opacity', '0');
+                label.textContent = improvement.area;
+                svg.appendChild(label);
+            });
+
+            // Axes
+            const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            xAxis.setAttribute('x1', matrixX + 50);
+            xAxis.setAttribute('y1', matrixY + 150);
+            xAxis.setAttribute('x2', matrixX + 300);
+            xAxis.setAttribute('y2', matrixY + 150);
+            xAxis.setAttribute('stroke', '#95a5a6');
+            xAxis.setAttribute('opacity', '0');
+            xAxis.setAttribute('class', 'matrix-axis');
+            svg.appendChild(xAxis);
+
+            const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            yAxis.setAttribute('x1', matrixX + 50);
+            yAxis.setAttribute('y1', matrixY + 50);
+            yAxis.setAttribute('x2', matrixX + 50);
+            yAxis.setAttribute('y2', matrixY + 150);
+            yAxis.setAttribute('stroke', '#95a5a6');
+            yAxis.setAttribute('opacity', '0');
+            yAxis.setAttribute('class', 'matrix-axis');
+            svg.appendChild(yAxis);
+
+            // Axis labels
+            const xLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            xLabel.setAttribute('x', matrixX + 175);
+            xLabel.setAttribute('y', matrixY + 170);
+            xLabel.setAttribute('text-anchor', 'middle');
+            xLabel.setAttribute('class', 'axis-label');
+            xLabel.setAttribute('opacity', '0');
+            xLabel.textContent = '優先度';
+            svg.appendChild(xLabel);
+
+            const yLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            yLabel.setAttribute('x', matrixX + 30);
+            yLabel.setAttribute('y', matrixY + 100);
+            yLabel.setAttribute('text-anchor', 'middle');
+            yLabel.setAttribute('class', 'axis-label');
+            yLabel.setAttribute('transform', `rotate(-90, ${matrixX + 30}, ${matrixY + 100})`);
+            yLabel.setAttribute('opacity', '0');
+            yLabel.textContent = '実装難易度';
+            svg.appendChild(yLabel);
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateSurveyResults();
+        }
+
+        function animateSurveyResults() {
+            const svg = document.getElementById('surveyChart');
+            
+            // Phase 1: Overall score
+            setTimeout(() => {
+                svg.querySelector('.gauge-bg').setAttribute('opacity', '1');
+                svg.querySelector('.overall-label').setAttribute('opacity', '1');
+                svg.querySelector('.response-count').setAttribute('opacity', '1');
+
+                const gaugeProgress = svg.querySelector('.gauge-progress');
+                const scoreText = svg.querySelector('.overall-score');
+                const targetOffset = gaugeProgress.getAttribute('data-target-offset');
+                const targetScore = parseFloat(scoreText.getAttribute('data-target'));
+
+                gaugeProgress.setAttribute('opacity', '1');
+                gaugeProgress.setAttribute('stroke-dashoffset', targetOffset);
+
+                let currentScore = 0;
+                const scoreIncrement = targetScore / 50;
+
+                const scoreCounter = setInterval(() => {
+                    currentScore += scoreIncrement;
+                    if (currentScore >= targetScore) {
+                        currentScore = targetScore;
+                        clearInterval(scoreCounter);
+                    }
+                    scoreText.textContent = currentScore.toFixed(1);
+                    scoreText.setAttribute('opacity', '1');
+                }, 40);
+            }, 0);
+
+            // Phase 2: Category ratings
+            setTimeout(() => {
+                const sectionTitle = svg.querySelectorAll('.section-title')[0];
+                sectionTitle.setAttribute('opacity', '1');
+
+                const categoryElements = svg.querySelectorAll('.category-icon, .category-name, .star-filled, .star-empty');
+                const categoryScores = svg.querySelectorAll('.category-score');
+
+                categoryElements.forEach((element, index) => {
+                    setTimeout(() => {
+                        element.setAttribute('opacity', '1');
+                    }, index * 30);
+                });
+
+                categoryScores.forEach((score, index) => {
+                    setTimeout(() => {
+                        const target = parseFloat(score.getAttribute('data-target'));
+                        let current = 0;
+                        const increment = target / 30;
+
+                        const counter = setInterval(() => {
+                            current += increment;
+                            if (current >= target) {
+                                current = target;
+                                clearInterval(counter);
+                            }
+                            score.textContent = current.toFixed(1);
+                            score.setAttribute('opacity', '1');
+                        }, 50);
+                    }, index * 300);
+                });
+            }, 1500);
+
+            // Phase 3: Demographics
+            setTimeout(() => {
+                svg.querySelector('.demo-bg').setAttribute('opacity', '1');
+                svg.querySelectorAll('.section-title')[1].setAttribute('opacity', '1');
+
+                const demoElements = svg.querySelectorAll('.demo-segment, .percent-text, .sat-score');
+                const percentBars = svg.querySelectorAll('.percent-bar');
+
+                demoElements.forEach((element, index) => {
+                    setTimeout(() => {
+                        element.setAttribute('opacity', '1');
+                    }, index * 100);
+                });
+
+                percentBars.forEach((bar, index) => {
+                    setTimeout(() => {
+                        const targetWidth = bar.getAttribute('data-target-width');
+                        bar.setAttribute('width', targetWidth);
+                        bar.setAttribute('opacity', '0.8');
+                    }, index * 200);
+                });
+            }, 3000);
+
+            // Phase 4: Improvement matrix
+            setTimeout(() => {
+                svg.querySelector('.matrix-bg').setAttribute('opacity', '1');
+                svg.querySelectorAll('.section-title')[2].setAttribute('opacity', '1');
+                svg.querySelectorAll('.matrix-axis').forEach(axis => axis.setAttribute('opacity', '1'));
+                svg.querySelectorAll('.axis-label').forEach(label => label.setAttribute('opacity', '1'));
+
+                const points = svg.querySelectorAll('.improvement-point');
+                const labels = svg.querySelectorAll('.improvement-label');
+
+                points.forEach((point, index) => {
+                    setTimeout(() => {
+                        point.setAttribute('opacity', '0.9');
+                        labels[index].setAttribute('opacity', '1');
+                    }, index * 200);
+                });
+
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+            }, 4500);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            const svg = document.getElementById('surveyChart');
+            const allElements = svg.querySelectorAll('*:not(rect:first-child)');
+            
+            allElements.forEach(element => {
+                element.setAttribute('opacity', '0');
+                
+                if (element.classList.contains('overall-score') || element.classList.contains('category-score')) {
+                    element.textContent = '0.0';
+                }
+                if (element.classList.contains('gauge-progress')) {
+                    element.setAttribute('stroke-dashoffset', '628.32');
+                }
+                if (element.classList.contains('percent-bar')) {
+                    element.setAttribute('width', '0');
+                }
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        window.addEventListener('load', () => {
+            initChart();
+            setTimeout(() => playAnimation(), 1000);
+        });
+    </script>
+
+    <style>
+        .overall-score {
+            fill: #2c3e50;
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .overall-label, .response-count {
+            fill: #7f8c8d;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .section-title {
+            fill: #2c3e50;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .category-icon {
+            font-size: 16px;
+        }
+        
+        .category-name {
+            fill: #34495e;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .star-filled {
+            fill: #f39c12;
+            font-size: 14px;
+        }
+        
+        .star-empty {
+            fill: #bdc3c7;
+            font-size: 14px;
+        }
+        
+        .category-score {
+            fill: #2c3e50;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .demo-segment {
+            fill: #2c3e50;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .percent-text, .sat-score {
+            fill: #7f8c8d;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .improvement-label {
+            fill: #2c3e50;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .axis-label {
+            fill: #7f8c8d;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .improvement-point {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .improvement-point:hover {
+            r: 8;
+        }
+    </style>
+</body>
+</html>

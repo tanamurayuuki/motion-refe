@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>面グラフアニメーション - 累積売上推移</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">累積売上推移</h2>
+        
+        <div class="chart-area">
+            <div class="area-chart-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="areaChart">
+                    <!-- Grid lines will be added by JavaScript -->
+                    <!-- Axes will be added by JavaScript -->
+                    <!-- Areas will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for area chart (stacked areas)
+        const data = [
+            { month: '1月', product1: 80, product2: 60, product3: 40 },
+            { month: '2月', product1: 90, product2: 65, product3: 45 },
+            { month: '3月', product1: 100, product2: 70, product3: 50 },
+            { month: '4月', product1: 110, product2: 75, product3: 55 },
+            { month: '5月', product1: 130, product2: 85, product3: 60 },
+            { month: '6月', product1: 150, product2: 95, product3: 70 }
+        ];
+
+        const categories = [
+            { key: 'product1', name: '製品A', color: '#FF6B6B' },
+            { key: 'product2', name: '製品B', color: '#4ECDC4' },
+            { key: 'product3', name: '製品C', color: '#45B7D1' }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const margin = { top: 40, right: 120, bottom: 60, left: 60 };
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        // Calculate cumulative values
+        const processedData = data.map(d => {
+            let cumulative = 0;
+            const result = { month: d.month };
+            categories.forEach(cat => {
+                cumulative += d[cat.key];
+                result[cat.key] = cumulative;
+            });
+            return result;
+        });
+
+        // Scales
+        const xScale = (index) => (width / (data.length - 1)) * index;
+        const maxValue = Math.max(...processedData.map(d => d.product1));
+        const yScale = (value) => height - (value / maxValue) * height;
+
+        function initChart() {
+            const svg = document.getElementById('areaChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add background grid
+            addGrid(svg);
+            
+            // Add axes
+            addAxes(svg);
+            
+            // Add area layers (initially hidden)
+            categories.reverse().forEach((cat, index) => {
+                addArea(svg, cat, index);
+            });
+            
+            // Add legend
+            addLegend(svg);
+        }
+
+        function addGrid(svg) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'grid');
+            
+            // Horizontal grid lines
+            for (let i = 0; i <= 5; i++) {
+                const y = margin.top + (height / 5) * i;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', margin.left);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', margin.left + width);
+                line.setAttribute('y2', y);
+                line.setAttribute('class', 'grid-line');
+                g.appendChild(line);
+            }
+            
+            svg.appendChild(g);
+        }
+
+        function addAxes(svg) {
+            // X axis
+            const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            xAxis.setAttribute('x1', margin.left);
+            xAxis.setAttribute('y1', margin.top + height);
+            xAxis.setAttribute('x2', margin.left + width);
+            xAxis.setAttribute('y2', margin.top + height);
+            xAxis.setAttribute('class', 'axis');
+            svg.appendChild(xAxis);
+
+            // Y axis
+            const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            yAxis.setAttribute('x1', margin.left);
+            yAxis.setAttribute('y1', margin.top);
+            yAxis.setAttribute('x2', margin.left);
+            yAxis.setAttribute('y2', margin.top + height);
+            yAxis.setAttribute('class', 'axis');
+            svg.appendChild(yAxis);
+
+            // X axis labels
+            data.forEach((d, i) => {
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', margin.left + xScale(i));
+                text.setAttribute('y', margin.top + height + 25);
+                text.setAttribute('class', 'label-text');
+                text.textContent = d.month;
+                svg.appendChild(text);
+            });
+
+            // Y axis labels
+            for (let i = 0; i <= 5; i++) {
+                const value = (maxValue / 5) * (5 - i);
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', margin.left - 15);
+                text.setAttribute('y', margin.top + (height / 5) * i + 5);
+                text.setAttribute('class', 'axis-label');
+                text.setAttribute('text-anchor', 'end');
+                text.textContent = Math.round(value) + '万円';
+                svg.appendChild(text);
+            }
+        }
+
+        function addArea(svg, category, layerIndex) {
+            // Create path for area
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            
+            let pathData = '';
+            
+            // Create the top line
+            processedData.forEach((d, i) => {
+                const x = margin.left + xScale(i);
+                const y = margin.top + yScale(d[category.key]);
+                
+                if (i === 0) {
+                    pathData += `M ${x} ${y}`;
+                } else {
+                    pathData += ` L ${x} ${y}`;
+                }
+            });
+            
+            // Create the bottom line (previous layer or baseline)
+            if (layerIndex > 0) {
+                const prevCategory = categories[layerIndex - 1];
+                for (let i = processedData.length - 1; i >= 0; i--) {
+                    const d = processedData[i];
+                    const x = margin.left + xScale(i);
+                    const y = margin.top + yScale(d[prevCategory.key]);
+                    pathData += ` L ${x} ${y}`;
+                }
+            } else {
+                // Bottom layer - line to baseline
+                const lastX = margin.left + xScale(processedData.length - 1);
+                const baseline = margin.top + height;
+                pathData += ` L ${lastX} ${baseline}`;
+                pathData += ` L ${margin.left} ${baseline}`;
+            }
+            
+            pathData += ' Z';
+            
+            path.setAttribute('d', pathData);
+            path.setAttribute('fill', category.color);
+            path.setAttribute('fill-opacity', '0.7');
+            path.setAttribute('stroke', category.color);
+            path.setAttribute('stroke-width', '2');
+            path.setAttribute('class', 'area-path');
+            path.setAttribute('opacity', '0');
+            
+            // Add hover events
+            path.addEventListener('mouseenter', (e) => showTooltip(e, category));
+            path.addEventListener('mouseleave', hideTooltip);
+            
+            svg.appendChild(path);
+        }
+
+        function addLegend(svg) {
+            categories.forEach((cat, i) => {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'legend-item');
+                
+                // Legend square
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', margin.left + width + 20);
+                rect.setAttribute('y', margin.top + 20 + i * 30);
+                rect.setAttribute('width', 15);
+                rect.setAttribute('height', 15);
+                rect.setAttribute('fill', cat.color);
+                g.appendChild(rect);
+                
+                // Legend text
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', margin.left + width + 45);
+                text.setAttribute('y', margin.top + 32 + i * 30);
+                text.setAttribute('class', 'legend-text');
+                text.textContent = cat.name;
+                g.appendChild(text);
+                
+                svg.appendChild(g);
+            });
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateAreas();
+        }
+
+        function animateAreas() {
+            const svg = document.getElementById('areaChart');
+            const areaPaths = svg.querySelectorAll('.area-path');
+            
+            let startTime = null;
+            const duration = 2000 / animationSpeed;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Ease-out cubic function
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                areaPaths.forEach((path, index) => {
+                    const delay = index * 0.2;
+                    const adjustedProgress = Math.max(0, Math.min(1, (easeProgress - delay) / (1 - delay)));
+                    
+                    if (adjustedProgress > 0) {
+                        path.setAttribute('opacity', adjustedProgress);
+                        
+                        // Scale animation
+                        const scaleY = adjustedProgress;
+                        const transformOrigin = `${margin.left + width/2}px ${margin.top + height}px`;
+                        path.style.transformOrigin = transformOrigin;
+                        path.style.transform = `scaleY(${scaleY})`;
+                    }
+                });
+                
+                if (progress < 1 && isPlaying) {
+                    requestAnimationFrame(animate);
+                } else {
+                    isPlaying = false;
+                    document.getElementById('playBtn').style.opacity = '1';
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('areaChart');
+            const areaPaths = svg.querySelectorAll('.area-path');
+            
+            areaPaths.forEach(path => {
+                path.setAttribute('opacity', '0');
+                path.style.transform = 'scaleY(0)';
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, category) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `<strong>${category.name}</strong><br>累積売上データ`;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <style>
+        .area-path {
+            transition: all 0.3s ease;
+        }
+        
+        .legend-item {
+            cursor: pointer;
+        }
+        
+        .legend-text {
+            fill: #333;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .grid-line {
+            stroke: #e0e0e0;
+            stroke-width: 1;
+            opacity: 0.5;
+        }
+        
+        .axis {
+            stroke: #333;
+            stroke-width: 2;
+        }
+        
+        .label-text, .axis-label {
+            fill: #666;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            text-anchor: middle;
+        }
+    </style>
+</body>
+</html>

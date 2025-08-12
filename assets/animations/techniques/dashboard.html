@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>インタラクティブダッシュボード - リアルタイム業績監視</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">リアルタイム業績監視ダッシュボード</h2>
+        
+        <div class="chart-area">
+            <div class="dashboard-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="dashboardChart">
+                    <!-- Dashboard components will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dashboard KPI data
+        const dashboardData = {
+            kpis: [
+                { 
+                    title: '売上高', 
+                    value: 12500, 
+                    unit: '万円', 
+                    target: 15000, 
+                    trend: '+15%', 
+                    status: 'good',
+                    color: '#4ECDC4'
+                },
+                { 
+                    title: '利益率', 
+                    value: 22.5, 
+                    unit: '%', 
+                    target: 25, 
+                    trend: '+2.3%', 
+                    status: 'warning',
+                    color: '#FECA57'
+                },
+                { 
+                    title: '顧客数', 
+                    value: 1847, 
+                    unit: '社', 
+                    target: 2000, 
+                    trend: '+8.1%', 
+                    status: 'good',
+                    color: '#45B7D1'
+                },
+                { 
+                    title: '満足度', 
+                    value: 4.2, 
+                    unit: '/5.0', 
+                    target: 4.5, 
+                    trend: '+0.2', 
+                    status: 'warning',
+                    color: '#FF6B6B'
+                }
+            ],
+            chartData: {
+                sales: [
+                    { month: '1月', value: 1200 },
+                    { month: '2月', value: 1150 },
+                    { month: '3月', value: 1300 },
+                    { month: '4月', value: 1250 },
+                    { month: '5月', value: 1400 },
+                    { month: '6月', value: 1500 }
+                ],
+                performance: [85, 78, 92, 88, 95, 82, 90]
+            }
+        };
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+        let realTimeInterval;
+
+        // Chart dimensions
+        const width = 800;
+        const height = 400;
+
+        function initChart() {
+            const svg = document.getElementById('dashboardChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add dashboard layout
+            addDashboardLayout(svg);
+        }
+
+        function addDashboardLayout(svg) {
+            // Background
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('width', width);
+            bg.setAttribute('height', height);
+            bg.setAttribute('fill', '#f8f9fa');
+            bg.setAttribute('opacity', '0.3');
+            svg.appendChild(bg);
+            
+            // Add KPI cards (top row)
+            addKPICards(svg);
+            
+            // Add main chart (bottom left)
+            addMainChart(svg);
+            
+            // Add performance gauge (bottom right)
+            addPerformanceGauge(svg);
+            
+            // Add real-time data indicators
+            addRealTimeIndicators(svg);
+        }
+
+        function addKPICards(svg) {
+            const cardWidth = 180;
+            const cardHeight = 80;
+            const cardSpacing = 10;
+            const startX = 20;
+            const startY = 20;
+            
+            dashboardData.kpis.forEach((kpi, index) => {
+                const x = startX + (cardWidth + cardSpacing) * index;
+                const y = startY;
+                
+                // Card background
+                const cardBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                cardBg.setAttribute('x', x);
+                cardBg.setAttribute('y', y);
+                cardBg.setAttribute('width', cardWidth);
+                cardBg.setAttribute('height', cardHeight);
+                cardBg.setAttribute('fill', 'white');
+                cardBg.setAttribute('stroke', '#e0e0e0');
+                cardBg.setAttribute('stroke-width', '1');
+                cardBg.setAttribute('rx', '8');
+                cardBg.setAttribute('opacity', '0');
+                cardBg.setAttribute('class', 'kpi-card');
+                svg.appendChild(cardBg);
+                
+                // Status indicator
+                const statusColor = kpi.status === 'good' ? '#10B981' : kpi.status === 'warning' ? '#F59E0B' : '#EF4444';
+                const statusIndicator = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                statusIndicator.setAttribute('x', x);
+                statusIndicator.setAttribute('y', y);
+                statusIndicator.setAttribute('width', '4');
+                statusIndicator.setAttribute('height', cardHeight);
+                statusIndicator.setAttribute('fill', statusColor);
+                statusIndicator.setAttribute('opacity', '0');
+                statusIndicator.setAttribute('class', 'status-indicator');
+                svg.appendChild(statusIndicator);
+                
+                // KPI title
+                const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                title.setAttribute('x', x + 15);
+                title.setAttribute('y', y + 20);
+                title.setAttribute('class', 'kpi-title');
+                title.setAttribute('opacity', '0');
+                title.textContent = kpi.title;
+                svg.appendChild(title);
+                
+                // KPI value
+                const value = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                value.setAttribute('x', x + 15);
+                value.setAttribute('y', y + 45);
+                value.setAttribute('class', 'kpi-value');
+                value.setAttribute('opacity', '0');
+                value.textContent = '0'; // Start with 0 for animation
+                value.setAttribute('data-target', kpi.value);
+                value.setAttribute('data-unit', kpi.unit);
+                svg.appendChild(value);
+                
+                // Trend indicator
+                const trend = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                trend.setAttribute('x', x + 15);
+                trend.setAttribute('y', y + 65);
+                trend.setAttribute('class', 'kpi-trend');
+                trend.setAttribute('fill', kpi.trend.startsWith('+') ? '#10B981' : '#EF4444');
+                trend.setAttribute('opacity', '0');
+                trend.textContent = kpi.trend;
+                svg.appendChild(trend);
+                
+                // Progress bar
+                const progressBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                progressBg.setAttribute('x', x + cardWidth - 40);
+                progressBg.setAttribute('y', y + 25);
+                progressBg.setAttribute('width', '20');
+                progressBg.setAttribute('height', '30');
+                progressBg.setAttribute('fill', '#e0e0e0');
+                progressBg.setAttribute('opacity', '0');
+                progressBg.setAttribute('rx', '3');
+                svg.appendChild(progressBg);
+                
+                const progress = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                progress.setAttribute('x', x + cardWidth - 40);
+                progress.setAttribute('y', y + 25 + 30);
+                progress.setAttribute('width', '20');
+                progress.setAttribute('height', '0');
+                progress.setAttribute('fill', kpi.color);
+                progress.setAttribute('opacity', '0');
+                progress.setAttribute('class', 'kpi-progress');
+                progress.setAttribute('data-target-height', (kpi.value / kpi.target) * 30);
+                progress.setAttribute('rx', '3');
+                svg.appendChild(progress);
+            });
+        }
+
+        function addMainChart(svg) {
+            const chartX = 20;
+            const chartY = 120;
+            const chartWidth = 380;
+            const chartHeight = 200;
+            
+            // Chart background
+            const chartBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            chartBg.setAttribute('x', chartX);
+            chartBg.setAttribute('y', chartY);
+            chartBg.setAttribute('width', chartWidth);
+            chartBg.setAttribute('height', chartHeight);
+            chartBg.setAttribute('fill', 'white');
+            chartBg.setAttribute('stroke', '#e0e0e0');
+            chartBg.setAttribute('stroke-width', '1');
+            chartBg.setAttribute('rx', '8');
+            chartBg.setAttribute('opacity', '0');
+            chartBg.setAttribute('class', 'main-chart-bg');
+            svg.appendChild(chartBg);
+            
+            // Chart title
+            const chartTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            chartTitle.setAttribute('x', chartX + 15);
+            chartTitle.setAttribute('y', chartY + 25);
+            chartTitle.setAttribute('class', 'chart-title-small');
+            chartTitle.setAttribute('opacity', '0');
+            chartTitle.textContent = '月別売上推移';
+            svg.appendChild(chartTitle);
+            
+            // Add line chart
+            const margin = 30;
+            const innerWidth = chartWidth - margin * 2;
+            const innerHeight = chartHeight - margin * 2 - 20;
+            const maxValue = Math.max(...dashboardData.chartData.sales.map(d => d.value));
+            
+            // Chart area
+            const chartArea = chartX + margin;
+            const chartAreaY = chartY + margin + 20;
+            
+            // Axes
+            const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            xAxis.setAttribute('x1', chartArea);
+            xAxis.setAttribute('y1', chartAreaY + innerHeight);
+            xAxis.setAttribute('x2', chartArea + innerWidth);
+            xAxis.setAttribute('y2', chartAreaY + innerHeight);
+            xAxis.setAttribute('stroke', '#ccc');
+            xAxis.setAttribute('opacity', '0');
+            xAxis.setAttribute('class', 'chart-axis');
+            svg.appendChild(xAxis);
+            
+            const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            yAxis.setAttribute('x1', chartArea);
+            yAxis.setAttribute('y1', chartAreaY);
+            yAxis.setAttribute('x2', chartArea);
+            yAxis.setAttribute('y2', chartAreaY + innerHeight);
+            yAxis.setAttribute('stroke', '#ccc');
+            yAxis.setAttribute('opacity', '0');
+            yAxis.setAttribute('class', 'chart-axis');
+            svg.appendChild(yAxis);
+            
+            // Line path
+            let pathData = '';
+            dashboardData.chartData.sales.forEach((d, i) => {
+                const x = chartArea + (innerWidth / (dashboardData.chartData.sales.length - 1)) * i;
+                const y = chartAreaY + innerHeight - (d.value / maxValue) * innerHeight;
+                
+                if (i === 0) {
+                    pathData += `M ${x} ${y}`;
+                } else {
+                    pathData += ` L ${x} ${y}`;
+                }
+            });
+            
+            const linePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            linePath.setAttribute('d', pathData);
+            linePath.setAttribute('fill', 'none');
+            linePath.setAttribute('stroke', '#4ECDC4');
+            linePath.setAttribute('stroke-width', '3');
+            linePath.setAttribute('opacity', '0');
+            linePath.setAttribute('class', 'line-chart-path');
+            svg.appendChild(linePath);
+            
+            // Data points
+            dashboardData.chartData.sales.forEach((d, i) => {
+                const x = chartArea + (innerWidth / (dashboardData.chartData.sales.length - 1)) * i;
+                const y = chartAreaY + innerHeight - (d.value / maxValue) * innerHeight;
+                
+                const point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                point.setAttribute('cx', x);
+                point.setAttribute('cy', y);
+                point.setAttribute('r', '4');
+                point.setAttribute('fill', '#4ECDC4');
+                point.setAttribute('stroke', 'white');
+                point.setAttribute('stroke-width', '2');
+                point.setAttribute('opacity', '0');
+                point.setAttribute('class', 'chart-point');
+                
+                point.addEventListener('mouseenter', (e) => showTooltip(e, d));
+                point.addEventListener('mouseleave', hideTooltip);
+                
+                svg.appendChild(point);
+            });
+        }
+
+        function addPerformanceGauge(svg) {
+            const gaugeX = 450;
+            const gaugeY = 120;
+            const gaugeWidth = 330;
+            const gaugeHeight = 200;
+            
+            // Gauge background
+            const gaugeBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            gaugeBg.setAttribute('x', gaugeX);
+            gaugeBg.setAttribute('y', gaugeY);
+            gaugeBg.setAttribute('width', gaugeWidth);
+            gaugeBg.setAttribute('height', gaugeHeight);
+            gaugeBg.setAttribute('fill', 'white');
+            gaugeBg.setAttribute('stroke', '#e0e0e0');
+            gaugeBg.setAttribute('stroke-width', '1');
+            gaugeBg.setAttribute('rx', '8');
+            gaugeBg.setAttribute('opacity', '0');
+            gaugeBg.setAttribute('class', 'gauge-bg');
+            svg.appendChild(gaugeBg);
+            
+            // Gauge title
+            const gaugeTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            gaugeTitle.setAttribute('x', gaugeX + 15);
+            gaugeTitle.setAttribute('y', gaugeY + 25);
+            gaugeTitle.setAttribute('class', 'chart-title-small');
+            gaugeTitle.setAttribute('opacity', '0');
+            gaugeTitle.textContent = '総合パフォーマンス';
+            svg.appendChild(gaugeTitle);
+            
+            // Circular gauge
+            const centerX = gaugeX + gaugeWidth / 2;
+            const centerY = gaugeY + gaugeHeight / 2 + 10;
+            const radius = 60;
+            
+            // Background arc
+            const bgArc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            bgArc.setAttribute('cx', centerX);
+            bgArc.setAttribute('cy', centerY);
+            bgArc.setAttribute('r', radius);
+            bgArc.setAttribute('fill', 'none');
+            bgArc.setAttribute('stroke', '#e0e0e0');
+            bgArc.setAttribute('stroke-width', '12');
+            bgArc.setAttribute('opacity', '0');
+            bgArc.setAttribute('class', 'gauge-bg-arc');
+            svg.appendChild(bgArc);
+            
+            // Performance arc
+            const performanceArc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            performanceArc.setAttribute('cx', centerX);
+            performanceArc.setAttribute('cy', centerY);
+            performanceArc.setAttribute('r', radius);
+            performanceArc.setAttribute('fill', 'none');
+            performanceArc.setAttribute('stroke', '#10B981');
+            performanceArc.setAttribute('stroke-width', '12');
+            performanceArc.setAttribute('stroke-linecap', 'round');
+            performanceArc.setAttribute('stroke-dasharray', `${2 * Math.PI * radius}`);
+            performanceArc.setAttribute('stroke-dashoffset', `${2 * Math.PI * radius}`);
+            performanceArc.setAttribute('opacity', '0');
+            performanceArc.setAttribute('class', 'gauge-arc');
+            performanceArc.setAttribute('transform', `rotate(-90 ${centerX} ${centerY})`);
+            svg.appendChild(performanceArc);
+            
+            // Performance value
+            const perfValue = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            perfValue.setAttribute('x', centerX);
+            perfValue.setAttribute('y', centerY + 5);
+            perfValue.setAttribute('class', 'gauge-value');
+            perfValue.setAttribute('text-anchor', 'middle');
+            perfValue.setAttribute('opacity', '0');
+            perfValue.textContent = '0%';
+            perfValue.setAttribute('data-target', '87');
+            svg.appendChild(perfValue);
+        }
+
+        function addRealTimeIndicators(svg) {
+            // Real-time status indicators
+            const indicators = [
+                { name: 'データ更新', status: 'active', x: 620, y: 340 },
+                { name: 'API接続', status: 'active', x: 700, y: 340 }
+            ];
+            
+            indicators.forEach(indicator => {
+                // Status dot
+                const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                dot.setAttribute('cx', indicator.x);
+                dot.setAttribute('cy', indicator.y);
+                dot.setAttribute('r', '4');
+                dot.setAttribute('fill', indicator.status === 'active' ? '#10B981' : '#EF4444');
+                dot.setAttribute('opacity', '0');
+                dot.setAttribute('class', 'status-dot');
+                svg.appendChild(dot);
+                
+                // Status label
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', indicator.x + 10);
+                label.setAttribute('y', indicator.y + 4);
+                label.setAttribute('class', 'status-label');
+                label.setAttribute('opacity', '0');
+                label.textContent = indicator.name;
+                svg.appendChild(label);
+            });
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateDashboard();
+        }
+
+        function animateDashboard() {
+            const svg = document.getElementById('dashboardChart');
+            
+            // Phase 1: Show layout
+            animateLayoutElements(svg, () => {
+                // Phase 2: Animate KPI values
+                animateKPIValues(svg, () => {
+                    // Phase 3: Animate charts
+                    animateCharts(svg, () => {
+                        // Phase 4: Start real-time updates
+                        startRealTimeUpdates(svg);
+                        
+                        isPlaying = false;
+                        document.getElementById('playBtn').style.opacity = '1';
+                    });
+                });
+            });
+        }
+
+        function animateLayoutElements(svg, callback) {
+            const elements = svg.querySelectorAll('.kpi-card, .status-indicator, .main-chart-bg, .gauge-bg, .status-dot');
+            
+            let elementIndex = 0;
+            
+            function animateNext() {
+                if (elementIndex >= elements.length) {
+                    callback();
+                    return;
+                }
+                
+                const element = elements[elementIndex];
+                
+                let startTime = null;
+                const duration = 300 / animationSpeed;
+                
+                function animate(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    
+                    element.setAttribute('opacity', progress);
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        elementIndex++;
+                        setTimeout(() => animateNext(), 100 / animationSpeed);
+                    }
+                }
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animateNext();
+        }
+
+        function animateKPIValues(svg, callback) {
+            const kpiValues = svg.querySelectorAll('.kpi-value');
+            const kpiTexts = svg.querySelectorAll('.kpi-title, .kpi-trend, .status-label');
+            const kpiProgresses = svg.querySelectorAll('.kpi-progress');
+            
+            // Show text elements first
+            kpiTexts.forEach(text => {
+                text.setAttribute('opacity', '1');
+            });
+            
+            // Animate values
+            kpiValues.forEach((valueElement, index) => {
+                const targetValue = parseFloat(valueElement.getAttribute('data-target'));
+                const unit = valueElement.getAttribute('data-unit');
+                
+                let startTime = null;
+                const duration = 1500 / animationSpeed;
+                
+                function animate(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    
+                    const currentValue = targetValue * progress;
+                    valueElement.textContent = currentValue.toFixed(targetValue > 100 ? 0 : 1) + unit;
+                    valueElement.setAttribute('opacity', progress);
+                    
+                    // Animate progress bars
+                    if (kpiProgresses[index]) {
+                        const targetHeight = parseFloat(kpiProgresses[index].getAttribute('data-target-height'));
+                        const currentHeight = targetHeight * progress;
+                        kpiProgresses[index].setAttribute('height', currentHeight);
+                        kpiProgresses[index].setAttribute('y', 
+                            parseFloat(kpiProgresses[index].getAttribute('y')) - currentHeight);
+                        kpiProgresses[index].setAttribute('opacity', progress);
+                    }
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    }
+                }
+                
+                setTimeout(() => requestAnimationFrame(animate), index * 200 / animationSpeed);
+            });
+            
+            setTimeout(callback, 2000 / animationSpeed);
+        }
+
+        function animateCharts(svg, callback) {
+            // Animate chart axes and elements
+            const chartElements = svg.querySelectorAll('.chart-axis, .chart-title-small, .gauge-bg-arc');
+            
+            chartElements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.setAttribute('opacity', '1');
+                }, index * 200 / animationSpeed);
+            });
+            
+            // Animate line chart
+            setTimeout(() => {
+                const linePath = svg.querySelector('.line-chart-path');
+                const chartPoints = svg.querySelectorAll('.chart-point');
+                
+                linePath.setAttribute('opacity', '1');
+                
+                chartPoints.forEach((point, index) => {
+                    setTimeout(() => {
+                        point.setAttribute('opacity', '1');
+                    }, index * 150 / animationSpeed);
+                });
+            }, 600 / animationSpeed);
+            
+            // Animate gauge
+            setTimeout(() => {
+                const gaugeArc = svg.querySelector('.gauge-arc');
+                const gaugeValue = svg.querySelector('.gauge-value');
+                const targetValue = parseInt(gaugeValue.getAttribute('data-target'));
+                
+                gaugeArc.setAttribute('opacity', '1');
+                gaugeValue.setAttribute('opacity', '1');
+                
+                const circumference = 2 * Math.PI * 60;
+                const targetOffset = circumference * (1 - targetValue / 100);
+                
+                let startTime = null;
+                const duration = 1500 / animationSpeed;
+                
+                function animate(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    
+                    const currentOffset = circumference - (circumference - targetOffset) * progress;
+                    gaugeArc.setAttribute('stroke-dashoffset', currentOffset);
+                    
+                    const currentValue = Math.round(targetValue * progress);
+                    gaugeValue.textContent = currentValue + '%';
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    }
+                }
+                
+                requestAnimationFrame(animate);
+            }, 1000 / animationSpeed);
+            
+            setTimeout(callback, 2500 / animationSpeed);
+        }
+
+        function startRealTimeUpdates(svg) {
+            const statusDots = svg.querySelectorAll('.status-dot');
+            
+            // Pulsing animation for status indicators
+            statusDots.forEach(dot => {
+                setInterval(() => {
+                    dot.style.animation = 'pulse 1s ease-in-out';
+                    setTimeout(() => {
+                        dot.style.animation = '';
+                    }, 1000);
+                }, 3000);
+            });
+            
+            // Simulate data updates
+            realTimeInterval = setInterval(() => {
+                updateRandomKPI(svg);
+            }, 5000 / animationSpeed);
+        }
+
+        function updateRandomKPI(svg) {
+            const kpiValues = svg.querySelectorAll('.kpi-value');
+            const randomIndex = Math.floor(Math.random() * kpiValues.length);
+            const kpiElement = kpiValues[randomIndex];
+            
+            const currentValue = parseFloat(kpiElement.getAttribute('data-target'));
+            const variation = (Math.random() - 0.5) * 0.1; // ±10% variation
+            const newValue = currentValue * (1 + variation);
+            
+            kpiElement.setAttribute('data-target', newValue);
+            
+            // Animate to new value
+            let startTime = null;
+            const duration = 1000;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                const interpolatedValue = currentValue + (newValue - currentValue) * progress;
+                const unit = kpiElement.getAttribute('data-unit');
+                kpiElement.textContent = interpolatedValue.toFixed(newValue > 100 ? 0 : 1) + unit;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            clearInterval(realTimeInterval);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('dashboardChart');
+            const allElements = svg.querySelectorAll('*:not(rect:first-child)');
+            
+            allElements.forEach(element => {
+                element.setAttribute('opacity', '0');
+                if (element.classList.contains('kpi-value')) {
+                    element.textContent = '0';
+                }
+                if (element.classList.contains('gauge-value')) {
+                    element.textContent = '0%';
+                }
+                if (element.classList.contains('gauge-arc')) {
+                    element.setAttribute('stroke-dashoffset', `${2 * Math.PI * 60}`);
+                }
+                if (element.classList.contains('kpi-progress')) {
+                    element.setAttribute('height', '0');
+                }
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, data) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${data.month}</strong><br>
+                売上: ${data.value}万円
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <style>
+        .kpi-title {
+            fill: #666;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .kpi-value {
+            fill: #333;
+            font-size: 18px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .kpi-trend {
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .chart-title-small {
+            fill: #333;
+            font-size: 13px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .gauge-value {
+            fill: #333;
+            font-size: 20px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .status-label {
+            fill: #666;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .chart-point {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .chart-point:hover {
+            r: 6;
+        }
+        
+        .line-chart-path {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: drawLine 2s ease-out forwards;
+        }
+        
+        @keyframes drawLine {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.2);
+            }
+        }
+        
+        .status-dot {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 800px) {
+            .kpi-title {
+                font-size: 10px;
+            }
+            
+            .kpi-value {
+                font-size: 14px;
+            }
+            
+            .chart-title-small {
+                font-size: 11px;
+            }
+        }
+    </style>
+</body>
+</html>

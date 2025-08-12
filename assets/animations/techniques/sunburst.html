@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サンバーストチャートアニメーション - 組織構造可視化</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">組織構造可視化</h2>
+        
+        <div class="chart-area">
+            <div class="sunburst-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="sunburstChart">
+                    <!-- Sunburst arcs will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Hierarchical organization data
+        const organizationData = {
+            name: "CEO",
+            value: 100,
+            color: "#333",
+            children: [
+                {
+                    name: "営業本部",
+                    value: 35,
+                    color: "#FF6B6B",
+                    children: [
+                        { name: "国内営業部", value: 20, color: "#FF8E8E" },
+                        { name: "海外営業部", value: 10, color: "#FFB1B1" },
+                        { name: "営業企画部", value: 5, color: "#FFD4D4" }
+                    ]
+                },
+                {
+                    name: "開発本部",
+                    value: 30,
+                    color: "#4ECDC4",
+                    children: [
+                        { name: "システム開発部", value: 15, color: "#6ED5D1" },
+                        { name: "製品開発部", value: 10, color: "#8EDDD9" },
+                        { name: "研究開発部", value: 5, color: "#AEE5E1" }
+                    ]
+                },
+                {
+                    name: "マーケティング本部",
+                    value: 20,
+                    color: "#45B7D1",
+                    children: [
+                        { name: "デジタル戦略部", value: 8, color: "#68C5D8" },
+                        { name: "ブランド戦略部", value: 7, color: "#8BD3DF" },
+                        { name: "PR部", value: 5, color: "#AEE1E6" }
+                    ]
+                },
+                {
+                    name: "管理本部",
+                    value: 15,
+                    color: "#96CEB4",
+                    children: [
+                        { name: "人事部", value: 6, color: "#A8D6C1" },
+                        { name: "経理部", value: 5, color: "#BADECE" },
+                        { name: "法務部", value: 4, color: "#CCE6DB" }
+                    ]
+                }
+            ]
+        };
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const centerX = 400;
+        const centerY = 200;
+        const innerRadius = 30;
+        const outerRadius = 150;
+
+        function initChart() {
+            const svg = document.getElementById('sunburstChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add center circle (CEO)
+            addCenterCircle(svg);
+            
+            // Calculate and add sunburst arcs
+            addSunburstArcs(svg);
+            
+            // Add center label
+            addCenterLabel(svg);
+        }
+
+        function addCenterCircle(svg) {
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', centerX);
+            circle.setAttribute('cy', centerY);
+            circle.setAttribute('r', '0'); // Start with 0 radius
+            circle.setAttribute('fill', organizationData.color);
+            circle.setAttribute('stroke', '#fff');
+            circle.setAttribute('stroke-width', '3');
+            circle.setAttribute('opacity', '0');
+            circle.setAttribute('class', 'center-circle');
+            circle.setAttribute('data-target-radius', innerRadius);
+            
+            // Add hover events
+            circle.addEventListener('mouseenter', (e) => showTooltip(e, organizationData));
+            circle.addEventListener('mouseleave', hideTooltip);
+            
+            svg.appendChild(circle);
+        }
+
+        function addCenterLabel(svg) {
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', centerX);
+            text.setAttribute('y', centerY + 5);
+            text.setAttribute('class', 'center-label');
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('opacity', '0');
+            text.textContent = organizationData.name;
+            svg.appendChild(text);
+        }
+
+        function addSunburstArcs(svg) {
+            let currentAngle = 0;
+            const totalValue = organizationData.children.reduce((sum, child) => sum + child.value, 0);
+            
+            // Level 1: Main divisions
+            organizationData.children.forEach((division, divIndex) => {
+                const angleSpan = (division.value / totalValue) * 2 * Math.PI;
+                const startAngle = currentAngle;
+                const endAngle = currentAngle + angleSpan;
+                
+                // Division arc (level 1)
+                const divisionArc = createArc(startAngle, endAngle, innerRadius + 10, innerRadius + 50);
+                const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path1.setAttribute('d', divisionArc);
+                path1.setAttribute('fill', division.color);
+                path1.setAttribute('stroke', '#fff');
+                path1.setAttribute('stroke-width', '2');
+                path1.setAttribute('opacity', '0');
+                path1.setAttribute('class', 'division-arc');
+                path1.setAttribute('data-level', '1');
+                path1.setAttribute('data-index', divIndex);
+                
+                // Add hover events
+                path1.addEventListener('mouseenter', (e) => showTooltip(e, division));
+                path1.addEventListener('mouseleave', hideTooltip);
+                
+                svg.appendChild(path1);
+                
+                // Division label
+                const midAngle = (startAngle + endAngle) / 2;
+                const labelRadius = innerRadius + 30;
+                const labelX = centerX + Math.cos(midAngle) * labelRadius;
+                const labelY = centerY + Math.sin(midAngle) * labelRadius;
+                
+                const divLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                divLabel.setAttribute('x', labelX);
+                divLabel.setAttribute('y', labelY + 3);
+                divLabel.setAttribute('class', 'division-label');
+                divLabel.setAttribute('text-anchor', 'middle');
+                divLabel.setAttribute('opacity', '0');
+                divLabel.textContent = division.name;
+                svg.appendChild(divLabel);
+                
+                // Level 2: Departments within each division
+                let deptCurrentAngle = startAngle;
+                const deptTotalValue = division.children.reduce((sum, child) => sum + child.value, 0);
+                
+                division.children.forEach((dept, deptIndex) => {
+                    const deptAngleSpan = (dept.value / deptTotalValue) * angleSpan;
+                    const deptStartAngle = deptCurrentAngle;
+                    const deptEndAngle = deptCurrentAngle + deptAngleSpan;
+                    
+                    // Department arc (level 2)
+                    const deptArc = createArc(deptStartAngle, deptEndAngle, innerRadius + 60, innerRadius + 90);
+                    const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path2.setAttribute('d', deptArc);
+                    path2.setAttribute('fill', dept.color);
+                    path2.setAttribute('stroke', '#fff');
+                    path2.setAttribute('stroke-width', '1');
+                    path2.setAttribute('opacity', '0');
+                    path2.setAttribute('class', 'department-arc');
+                    path2.setAttribute('data-level', '2');
+                    path2.setAttribute('data-division', divIndex);
+                    path2.setAttribute('data-index', deptIndex);
+                    
+                    // Add hover events
+                    path2.addEventListener('mouseenter', (e) => showTooltip(e, dept));
+                    path2.addEventListener('mouseleave', hideTooltip);
+                    
+                    svg.appendChild(path2);
+                    
+                    // Department label (only for larger segments)
+                    if (deptAngleSpan > 0.3) { // Only show labels for segments larger than ~17 degrees
+                        const deptMidAngle = (deptStartAngle + deptEndAngle) / 2;
+                        const deptLabelRadius = innerRadius + 75;
+                        const deptLabelX = centerX + Math.cos(deptMidAngle) * deptLabelRadius;
+                        const deptLabelY = centerY + Math.sin(deptMidAngle) * deptLabelRadius;
+                        
+                        const deptLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        deptLabel.setAttribute('x', deptLabelX);
+                        deptLabel.setAttribute('y', deptLabelY + 2);
+                        deptLabel.setAttribute('class', 'department-label');
+                        deptLabel.setAttribute('text-anchor', 'middle');
+                        deptLabel.setAttribute('opacity', '0');
+                        deptLabel.setAttribute('font-size', '9');
+                        deptLabel.textContent = dept.name.replace('部', '');
+                        svg.appendChild(deptLabel);
+                    }
+                    
+                    deptCurrentAngle += deptAngleSpan;
+                });
+                
+                currentAngle += angleSpan;
+            });
+        }
+
+        function createArc(startAngle, endAngle, innerR, outerR) {
+            const startAngleAdjusted = startAngle - Math.PI / 2; // Start from top
+            const endAngleAdjusted = endAngle - Math.PI / 2;
+            
+            const x1 = centerX + innerR * Math.cos(startAngleAdjusted);
+            const y1 = centerY + innerR * Math.sin(startAngleAdjusted);
+            const x2 = centerX + outerR * Math.cos(startAngleAdjusted);
+            const y2 = centerY + outerR * Math.sin(startAngleAdjusted);
+            
+            const x3 = centerX + outerR * Math.cos(endAngleAdjusted);
+            const y3 = centerY + outerR * Math.sin(endAngleAdjusted);
+            const x4 = centerX + innerR * Math.cos(endAngleAdjusted);
+            const y4 = centerY + innerR * Math.sin(endAngleAdjusted);
+            
+            const largeArcFlag = endAngle - startAngle <= Math.PI ? '0' : '1';
+            
+            return `M ${x1} ${y1} L ${x2} ${y2} A ${outerR} ${outerR} 0 ${largeArcFlag} 1 ${x3} ${y3} L ${x4} ${y4} A ${innerR} ${innerR} 0 ${largeArcFlag} 0 ${x1} ${y1} Z`;
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            // First animate center, then level 1, then level 2
+            animateCenter();
+        }
+
+        function animateCenter() {
+            const svg = document.getElementById('sunburstChart');
+            const centerCircle = svg.querySelector('.center-circle');
+            const centerLabel = svg.querySelector('.center-label');
+            
+            let startTime = null;
+            const duration = 800 / animationSpeed;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Ease-out cubic function
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                centerCircle.setAttribute('opacity', easeProgress);
+                centerCircle.setAttribute('r', innerRadius * easeProgress);
+                
+                if (easeProgress > 0.5) {
+                    centerLabel.setAttribute('opacity', (easeProgress - 0.5) / 0.5);
+                }
+                
+                if (progress < 1 && isPlaying) {
+                    requestAnimationFrame(animate);
+                } else {
+                    setTimeout(() => {
+                        animateLevel(1);
+                    }, 300 / animationSpeed);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function animateLevel(level) {
+            const svg = document.getElementById('sunburstChart');
+            const arcs = svg.querySelectorAll(`[data-level="${level}"]`);
+            const labels = svg.querySelectorAll(level === 1 ? '.division-label' : '.department-label');
+            
+            if (arcs.length === 0) {
+                if (level === 1) {
+                    setTimeout(() => {
+                        animateLevel(2);
+                    }, 500 / animationSpeed);
+                } else {
+                    isPlaying = false;
+                    document.getElementById('playBtn').style.opacity = '1';
+                }
+                return;
+            }
+            
+            let arcIndex = 0;
+            
+            function animateNextArc() {
+                if (arcIndex >= arcs.length || !isPlaying) {
+                    if (level === 1 && isPlaying) {
+                        setTimeout(() => {
+                            animateLevel(2);
+                        }, 500 / animationSpeed);
+                    } else if (level === 2) {
+                        isPlaying = false;
+                        document.getElementById('playBtn').style.opacity = '1';
+                    }
+                    return;
+                }
+                
+                const arc = arcs[arcIndex];
+                const label = labels[arcIndex];
+                
+                let startTime = null;
+                const duration = 600 / animationSpeed;
+                
+                function animate(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    
+                    // Ease-out cubic function
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+                    
+                    arc.setAttribute('opacity', easeProgress * 0.9);
+                    
+                    // Scale animation
+                    const scale = 0.5 + 0.5 * easeProgress;
+                    arc.style.transform = `scale(${scale})`;
+                    arc.style.transformOrigin = `${centerX}px ${centerY}px`;
+                    
+                    if (label && easeProgress > 0.6) {
+                        label.setAttribute('opacity', (easeProgress - 0.6) / 0.4);
+                    }
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        arcIndex++;
+                        setTimeout(() => {
+                            animateNextArc();
+                        }, level === 1 ? 200 / animationSpeed : 100 / animationSpeed);
+                    }
+                }
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animateNextArc();
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('sunburstChart');
+            const centerCircle = svg.querySelector('.center-circle');
+            const arcs = svg.querySelectorAll('[data-level]');
+            const labels = svg.querySelectorAll('text');
+            
+            if (centerCircle) {
+                centerCircle.setAttribute('opacity', '0');
+                centerCircle.setAttribute('r', '0');
+            }
+            
+            arcs.forEach(arc => {
+                arc.setAttribute('opacity', '0');
+                arc.style.transform = 'scale(0.5)';
+            });
+            
+            labels.forEach(label => {
+                label.setAttribute('opacity', '0');
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, data) {
+            const tooltip = document.getElementById('tooltip');
+            const totalValue = organizationData.value;
+            const percentage = Math.round((data.value / totalValue) * 100);
+            
+            tooltip.innerHTML = `
+                <strong>${data.name}</strong><br>
+                人数: ${data.value}人<br>
+                割合: ${percentage}%
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <style>
+        .center-circle {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .center-circle:hover {
+            stroke-width: 5;
+        }
+        
+        .division-arc, .department-arc {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .division-arc:hover, .department-arc:hover {
+            opacity: 1 !important;
+            stroke-width: 3;
+        }
+        
+        .center-label {
+            fill: white;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            pointer-events: none;
+        }
+        
+        .division-label {
+            fill: #333;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            pointer-events: none;
+        }
+        
+        .department-label {
+            fill: #333;
+            font-size: 8px;
+            font-family: Arial, sans-serif;
+            pointer-events: none;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .center-label {
+                font-size: 10px;
+            }
+            
+            .division-label {
+                font-size: 8px;
+            }
+            
+            .department-label {
+                font-size: 6px;
+            }
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,667 @@
+[
+    {
+        "id": "001",
+        "category": "基本グラフ",
+        "subcategory": "棒グラフ",
+        "title": "年度別売上推移",
+        "video_url": "assets/animations/basic-graphs/bar-chart.html",
+        "description": "売上の年度別推移を縦棒グラフで表示。データの増減を視覚的に分かりやすく表現します。",
+        "points": [
+            "棒の高さで売上規模を表現",
+            "色の変化で前年との差を強調",
+            "アニメーションで時系列の変化を演出"
+        ],
+        "usage": "市場分析、売上報告、業績プレゼンテーション",
+        "keywords": ["売上", "年度", "推移", "棒グラフ", "バーチャート", "縦棒", "時系列", "データ", "分析"],
+        "tags": ["ビジネス", "売上", "分析", "時系列", "比較"],
+        "difficulty": "初級",
+        "duration": "短時間",
+        "use_cases": ["ビジネス", "プレゼンテーション", "レポート"]
+    },
+    {
+        "id": "002",
+        "category": "基本グラフ",
+        "subcategory": "折れ線グラフ",
+        "title": "株価変動トレンド",
+        "video_url": "assets/animations/basic-graphs/line-chart.html",
+        "description": "時系列データの変化を折れ線で表現。トレンドの把握に最適です。",
+        "points": [
+            "線の傾きで変化の方向性を表現",
+            "データポイントのアニメーション",
+            "区間ごとの色分けでトレンド強調"
+        ],
+        "usage": "株価分析、売上推移、パフォーマンス監視",
+        "keywords": ["株価", "変動", "トレンド", "折れ線グラフ", "ラインチャート", "時系列", "変化", "推移"],
+        "tags": ["金融", "株価", "分析", "時系列", "トレンド"],
+        "difficulty": "初級",
+        "duration": "短時間",
+        "use_cases": ["金融", "分析", "レポート"]
+    },
+    {
+        "id": "003",
+        "category": "基本グラフ",
+        "subcategory": "円グラフ",
+        "title": "市場シェア分析",
+        "video_url": "assets/animations/basic-graphs/pie-chart.html",
+        "description": "全体に対する各項目の割合を円形で表現。構成比の理解に効果的です。",
+        "points": [
+            "セクターの大きさで割合を表現",
+            "色分けでカテゴリを区別",
+            "アニメーションで注目セクターを強調"
+        ],
+        "usage": "市場分析、予算配分、アンケート結果",
+        "keywords": ["市場", "シェア", "円グラフ", "パイチャート", "割合", "構成比", "セクター"],
+        "tags": ["ビジネス", "市場", "分析", "割合", "構成"],
+        "difficulty": "初級",
+        "duration": "短時間",
+        "use_cases": ["ビジネス", "マーケティング", "プレゼンテーション"]
+    },
+    {
+        "id": "004",
+        "category": "基本グラフ",
+        "subcategory": "面グラフ",
+        "title": "累積売上推移",
+        "video_url": "assets/animations/basic-graphs/area-chart.html",
+        "description": "複数のデータ系列を積み重ねて全体の変化を表現。累積効果の可視化に適しています。",
+        "points": [
+            "面積で数量の大きさを表現",
+            "積み重ねで複数要素の関係性を表示",
+            "グラデーションで視覚的な美しさを演出"
+        ],
+        "usage": "売上分析、リソース配分、進捗管理",
+        "keywords": ["累積", "売上", "推移", "面グラフ", "エリアチャート", "積み重ね", "系列"],
+        "tags": ["ビジネス", "売上", "分析", "累積", "推移"],
+        "difficulty": "中級",
+        "duration": "短時間",
+        "use_cases": ["ビジネス", "分析", "レポート"]
+    },
+    {
+        "id": "005",
+        "category": "表現テクニック",
+        "subcategory": "カウンター",
+        "title": "数値カウントアップ",
+        "video_url": "assets/animations/techniques/counter.html",
+        "description": "数値が0から目標値まで徐々にカウントアップするアニメーション。インパクトのある数値表現です。",
+        "points": [
+            "数値の変化でインパクトを創出",
+            "カウント速度の調整で演出効果を制御",
+            "最終値で一時停止して注目を集める"
+        ],
+        "usage": "売上実績、利用者数、達成率の強調表示",
+        "keywords": ["カウンター", "数値", "アップ", "アニメーション", "カウント", "実績", "インパクト"],
+        "tags": ["アニメーション", "数値", "インパクト", "実績"],
+        "difficulty": "中級",
+        "duration": "短時間",
+        "use_cases": ["ビジネス", "プレゼンテーション", "マーケティング"]
+    },
+    {
+        "id": "006",
+        "category": "表現テクニック",
+        "subcategory": "ゲージ",
+        "title": "進捗率表示",
+        "video_url": "assets/animations/techniques/gauge.html",
+        "description": "円形または半円形のゲージで進捗率や達成度を表現。直感的な理解を促します。",
+        "points": [
+            "ゲージの針で現在値を指示",
+            "色の変化で状態を表現（赤・黄・緑）",
+            "滑らかなアニメーションで変化を演出"
+        ],
+        "usage": "KPI監視、目標達成率、品質指標",
+        "keywords": ["ゲージ", "進捗", "率", "達成度", "メーター", "指標", "KPI", "監視"],
+        "tags": ["ビジネス", "進捗", "KPI", "監視", "指標"],
+        "difficulty": "中級",
+        "duration": "短時間",
+        "use_cases": ["ビジネス", "プロジェクト", "監視"]
+    },
+    {
+        "id": "007",
+        "category": "表現テクニック",
+        "subcategory": "タイムライン",
+        "title": "プロジェクト進捗",
+        "video_url": "assets/animations/techniques/timeline.html",
+        "description": "時系列に沿った出来事や進捗を直線状に表現。プロセスの可視化に効果的です。",
+        "points": [
+            "時間軸に沿った情報配置",
+            "マイルストーンの強調表示",
+            "進捗に応じたアニメーション表現"
+        ],
+        "usage": "プロジェクト管理、製品開発、企業沿革",
+        "keywords": ["タイムライン", "時系列", "進捗", "プロジェクト", "マイルストーン", "歴史", "時間"],
+        "tags": ["プロジェクト", "時系列", "管理", "進捗", "歴史"],
+        "difficulty": "中級",
+        "duration": "中時間",
+        "use_cases": ["ビジネス", "プロジェクト", "教育"]
+    },
+    {
+        "id": "008",
+        "category": "表現テクニック",
+        "subcategory": "フローチャート",
+        "title": "業務プロセス",
+        "video_url": "assets/animations/techniques/flowchart.html",
+        "description": "業務の流れや意思決定プロセスを図式化。複雑なワークフローの理解を支援します。",
+        "points": [
+            "矢印で処理の流れを表現",
+            "条件分岐の視覚化",
+            "各ステップの強調とアニメーション"
+        ],
+        "usage": "業務フロー、意思決定プロセス、システム設計",
+        "keywords": ["フローチャート", "業務", "プロセス", "ワークフロー", "意思決定", "分岐", "流れ"],
+        "tags": ["業務", "プロセス", "ワークフロー", "設計", "系統"],
+        "difficulty": "上級",
+        "duration": "中時間",
+        "use_cases": ["ビジネス", "システム", "教育"]
+    },
+    {
+        "id": "009",
+        "category": "用途・シーン別",
+        "subcategory": "ビジネスレポート",
+        "title": "四半期業績報告",
+        "video_url": "assets/animations/use-cases/business-report.html",
+        "description": "ビジネスレポート用の包括的なデータ可視化。複数指標を統合的に表現します。",
+        "points": [
+            "複数グラフの連携表示",
+            "KPI指標の強調",
+            "プロフェッショナルなデザイン"
+        ],
+        "usage": "株主報告、役員会議、投資家向けプレゼンテーション",
+        "keywords": ["ビジネス", "レポート", "四半期", "業績", "報告", "ダッシュボード", "KPI"],
+        "tags": ["ビジネス", "レポート", "業績", "分析", "KPI"],
+        "difficulty": "中級",
+        "duration": "中時間",
+        "use_cases": ["ビジネス", "プレゼンテーション", "レポート"]
+    },
+    {
+        "id": "010",
+        "category": "用途・シーン別",
+        "subcategory": "製品解説",
+        "title": "製品機能紹介",
+        "video_url": "assets/animations/use-cases/product-demo.html",
+        "description": "製品の特徴や機能を分かりやすく説明。顧客理解を促進します。",
+        "points": [
+            "製品特徴の視覚的表現",
+            "比較表によるメリット強調",
+            "使用シーンの具体化"
+        ],
+        "usage": "製品カタログ、営業プレゼンテーション、Webサイト",
+        "keywords": ["製品", "機能", "紹介", "特徴", "比較", "メリット", "解説"],
+        "tags": ["製品", "マーケティング", "営業", "紹介", "機能"],
+        "difficulty": "初級",
+        "duration": "中時間",
+        "use_cases": ["マーケティング", "営業", "Web"]
+    },
+    {
+        "id": "011",
+        "category": "用途・シーン別",
+        "subcategory": "教育キャンペーン",
+        "title": "環境保護意識向上",
+        "video_url": "assets/animations/use-cases/education-campaign.html",
+        "description": "教育的メッセージを効果的に伝達。行動変容を促進します。",
+        "points": [
+            "統計データの感情的表現",
+            "行動指針の明確化",
+            "記憶に残るビジュアル表現"
+        ],
+        "usage": "啓発キャンペーン、社内教育、公共広報",
+        "keywords": ["教育", "キャンペーン", "環境", "保護", "意識", "啓発", "広報"],
+        "tags": ["教育", "啓発", "環境", "キャンペーン", "社会"],
+        "difficulty": "中級",
+        "duration": "中時間",
+        "use_cases": ["教育", "啓発", "公共"]
+    },
+    {
+        "id": "012",
+        "category": "用途・シーン別",
+        "subcategory": "企業沿革",
+        "title": "会社設立50周年記念",
+        "video_url": "assets/animations/use-cases/company-history.html",
+        "description": "企業の歴史と成長を時系列で表現。ブランドストーリーを視覚化します。",
+        "points": [
+            "重要な節目の強調表示",
+            "成長指標の推移表示",
+            "企業文化の視覚的表現"
+        ],
+        "usage": "周年記念、会社案内、採用活動",
+        "keywords": ["企業", "沿革", "周年", "記念", "歴史", "成長", "ブランド"],
+        "tags": ["企業", "歴史", "周年", "ブランド", "成長"],
+        "difficulty": "中級",
+        "duration": "長時間",
+        "use_cases": ["企業", "ブランディング", "採用"],
+        "learning_objectives": [
+            "企業ストーリーの効果的な視覚化手法",
+            "時系列データと企業価値の連動表現"
+        ],
+        "related_items": ["007", "009"]
+    },
+    {
+        "id": "013",
+        "category": "基本グラフ",
+        "subcategory": "散布図",
+        "title": "売上高と利益率の相関分析",
+        "video_url": "assets/animations/basic-graphs/scatter-plot.html",
+        "description": "2つの変数間の相関関係を点の分布で表現。データの関係性を直感的に理解できます。",
+        "points": [
+            "点の分布で相関の強さを表現",
+            "近似線でトレンドを視覚化",
+            "外れ値の強調表示"
+        ],
+        "usage": "相関分析、データマイニング、品質管理",
+        "keywords": ["散布図", "相関", "分析", "売上", "利益率", "関係性", "トレンド"],
+        "tags": ["分析", "相関", "統計", "ビジネス", "データ"],
+        "difficulty": "中級",
+        "duration": "中時間",
+        "use_cases": ["分析", "研究", "品質管理"],
+        "learning_objectives": [
+            "相関関係の視覚的表現技法",
+            "外れ値の効果的な強調方法"
+        ],
+        "related_items": ["001", "014"]
+    },
+    {
+        "id": "014",
+        "category": "基本グラフ",
+        "subcategory": "バブルチャート",
+        "title": "製品ポートフォリオ分析",
+        "video_url": "assets/animations/basic-graphs/bubble-chart.html",
+        "description": "3次元のデータをX軸、Y軸、バブルサイズで表現。複雑なデータ関係を一目で把握できます。",
+        "points": [
+            "バブルサイズで第3の変数を表現",
+            "色分けでカテゴリを区別",
+            "アニメーションで時系列変化を表示"
+        ],
+        "usage": "ポートフォリオ分析、マーケット分析、リスク評価",
+        "keywords": ["バブル", "チャート", "3変数", "ポートフォリオ", "分析", "製品"],
+        "tags": ["分析", "ポートフォリオ", "3次元", "戦略", "製品"],
+        "difficulty": "上級",
+        "duration": "中時間",
+        "use_cases": ["戦略", "分析", "投資"],
+        "learning_objectives": [
+            "3次元データの効果的な2D表現",
+            "バブルサイズによる量的情報の表現"
+        ],
+        "related_items": ["013", "015"]
+    },
+    {
+        "id": "015",
+        "category": "基本グラフ",
+        "subcategory": "レーダーチャート",
+        "title": "従業員スキル評価",
+        "video_url": "assets/animations/basic-graphs/radar-chart.html",
+        "description": "複数の評価項目を放射状に配置してバランスを表現。全体的な能力を直感的に把握できます。",
+        "points": [
+            "多軸での総合評価表示",
+            "エリアの大きさでスキルレベルを表現",
+            "複数人の比較表示"
+        ],
+        "usage": "人事評価、製品比較、パフォーマンス分析",
+        "keywords": ["レーダー", "チャート", "スキル", "評価", "多軸", "従業員", "能力"],
+        "tags": ["人事", "評価", "スキル", "比較", "分析"],
+        "difficulty": "中級",
+        "duration": "中時間",
+        "use_cases": ["人事", "評価", "比較"],
+        "learning_objectives": [
+            "多軸データの放射状表現技法",
+            "複数対象の重ね合わせ比較手法"
+        ],
+        "related_items": ["003", "016"]
+    },
+    {
+        "id": "016",
+        "category": "基本グラフ",
+        "subcategory": "ヒートマップ",
+        "title": "ウェブサイト利用状況分析",
+        "video_url": "assets/animations/basic-graphs/heatmap.html",
+        "description": "データの密度や頻度を色の濃淡で表現。パターンの発見に効果的です。",
+        "points": [
+            "色の濃淡でデータ密度を表現",
+            "グリッド形式でパターンを可視化",
+            "ホットスポットの強調表示"
+        ],
+        "usage": "ウェブ解析、利用者行動分析、品質管理",
+        "keywords": ["ヒート", "マップ", "密度", "ウェブ", "利用", "分析", "パターン"],
+        "tags": ["ウェブ", "分析", "密度", "パターン", "行動"],
+        "difficulty": "中級",
+        "duration": "中時間",
+        "use_cases": ["ウェブ", "分析", "UX"],
+        "learning_objectives": [
+            "密度データの色彩表現技法",
+            "グリッドベースの情報整理手法"
+        ],
+        "related_items": ["017", "025"]
+    },
+    {
+        "id": "017",
+        "category": "基本グラフ",
+        "subcategory": "ウォーターフォールチャート",
+        "title": "予算増減要因分析",
+        "video_url": "assets/animations/basic-graphs/waterfall-chart.html",
+        "description": "累積的な変化の要因を段階的に表現。増減の詳細な内訳を可視化します。",
+        "points": [
+            "段階的な増減を縦棒で表現",
+            "正負の変化を色分けで区別",
+            "累積結果の連続表示"
+        ],
+        "usage": "予算分析、利益分析、変化要因の詳細説明",
+        "keywords": ["ウォーターフォール", "予算", "増減", "要因", "分析", "累積"],
+        "tags": ["予算", "分析", "要因", "財務", "変化"],
+        "difficulty": "上級",
+        "duration": "中時間",
+        "use_cases": ["財務", "分析", "経営"],
+        "learning_objectives": [
+            "累積変化の段階的表現手法",
+            "正負データの効果的な色分け表現"
+        ],
+        "related_items": ["001", "009"]
+    },
+    {
+        "id": "018",
+        "category": "基本グラフ",
+        "subcategory": "ピクトグラム",
+        "title": "人口統計データ表現",
+        "video_url": "assets/animations/basic-graphs/pictogram.html",
+        "description": "アイコンの数や配置で数量を表現。直感的で親しみやすいデータ表現です。",
+        "points": [
+            "アイコンの個数で数量を表現",
+            "視覚的に分かりやすい象徴的表現",
+            "段階的な表示アニメーション"
+        ],
+        "usage": "統計資料、プレゼンテーション、一般向け資料",
+        "keywords": ["ピクト", "グラム", "アイコン", "人口", "統計", "数量", "表現"],
+        "tags": ["統計", "アイコン", "数量", "視覚的", "親和性"],
+        "difficulty": "初級",
+        "duration": "短時間",
+        "use_cases": ["統計", "プレゼンテーション", "教育"],
+        "learning_objectives": [
+            "アイコンによる数量表現技法",
+            "親しみやすいデータ視覚化手法"
+        ],
+        "related_items": ["003", "019"]
+    },
+    {
+        "id": "019",
+        "category": "表現テクニック",
+        "subcategory": "マップアニメーション",
+        "title": "地域別売上分布",
+        "video_url": "assets/animations/techniques/map-animation.html",
+        "description": "地理的データを地図上にマッピング。地域特性を考慮したデータ分析に最適です。",
+        "points": [
+            "地図上でのデータマッピング",
+            "地域間の比較表示",
+            "時系列での変化アニメーション"
+        ],
+        "usage": "地域分析、市場調査、物流分析",
+        "keywords": ["マップ", "地図", "地域", "売上", "分布", "地理", "アニメーション"],
+        "tags": ["地理", "地域", "分析", "マップ", "分布"],
+        "difficulty": "上級",
+        "duration": "長時間",
+        "use_cases": ["地域分析", "マーケティング", "物流"],
+        "learning_objectives": [
+            "地理的データの効果的なマッピング技法",
+            "空間的データ分析の視覚化手法"
+        ],
+        "related_items": ["016", "020"]
+    },
+    {
+        "id": "020",
+        "category": "表現テクニック",
+        "subcategory": "ツリーマップ",
+        "title": "部門別予算配分",
+        "video_url": "assets/animations/techniques/treemap.html",
+        "description": "階層データを入れ子の矩形で表現。全体と部分の関係を効果的に可視化します。",
+        "points": [
+            "矩形の大きさで数値の大小を表現",
+            "階層構造の入れ子表現",
+            "色分けでカテゴリを区別"
+        ],
+        "usage": "予算配分、組織分析、リソース管理",
+        "keywords": ["ツリー", "マップ", "階層", "予算", "配分", "部門", "矩形"],
+        "tags": ["階層", "予算", "配分", "組織", "構造"],
+        "difficulty": "上級",
+        "duration": "中時間",
+        "use_cases": ["予算", "組織", "リソース"],
+        "learning_objectives": [
+            "階層データの入れ子矩形表現技法",
+            "全体と部分のバランス表現手法"
+        ],
+        "related_items": ["017", "021"]
+    },
+    {
+        "id": "021",
+        "category": "表現テクニック",
+        "subcategory": "サンバーストチャート",
+        "title": "組織構造可視化",
+        "video_url": "assets/animations/techniques/sunburst.html",
+        "description": "階層構造を放射状の円形で表現。組織や分類の関係性を美しく可視化します。",
+        "points": [
+            "放射状の階層表現",
+            "角度で数量比率を表現",
+            "インタラクティブな階層探索"
+        ],
+        "usage": "組織図、分類分析、ファイルシステム可視化",
+        "keywords": ["サンバースト", "階層", "円形", "組織", "構造", "放射状"],
+        "tags": ["階層", "組織", "構造", "円形", "分類"],
+        "difficulty": "上級",
+        "duration": "長時間",
+        "use_cases": ["組織", "分類", "構造分析"],
+        "learning_objectives": [
+            "階層データの放射状円形表現技法",
+            "インタラクティブな階層探索UI設計"
+        ],
+        "related_items": ["015", "020"]
+    },
+    {
+        "id": "022",
+        "category": "表現テクニック",
+        "subcategory": "モーフィング",
+        "title": "グラフ形状変化",
+        "video_url": "assets/animations/techniques/morphing.html",
+        "description": "グラフの形状がスムーズに変化する表現。データの変遷を動的に演出します。",
+        "points": [
+            "滑らかな形状変化アニメーション",
+            "データ変化の視覚的インパクト",
+            "複数グラフ間の遷移表現"
+        ],
+        "usage": "データ変遷説明、比較プレゼンテーション、動的レポート",
+        "keywords": ["モーフィング", "変化", "アニメーション", "グラフ", "遷移", "変形"],
+        "tags": ["アニメーション", "変化", "遷移", "動的", "効果"],
+        "difficulty": "上級",
+        "duration": "長時間",
+        "use_cases": ["プレゼンテーション", "動的表示", "比較"],
+        "learning_objectives": [
+            "グラフ間のスムーズな変化表現技法",
+            "データ変遷の動的可視化手法"
+        ],
+        "related_items": ["005", "023"]
+    },
+    {
+        "id": "023",
+        "category": "表現テクニック",
+        "subcategory": "パーティクルエフェクト",
+        "title": "データ流動表現",
+        "video_url": "assets/animations/techniques/particles.html",
+        "description": "データを粒子の動きで表現。流れや分散を美しくアニメーション化します。",
+        "points": [
+            "粒子の動きでデータフローを表現",
+            "集散パターンで傾向を可視化",
+            "美しい視覚効果による印象深化"
+        ],
+        "usage": "データフロー図、ネットワーク分析、概念的表現",
+        "keywords": ["パーティクル", "粒子", "エフェクト", "データ", "流動", "動き"],
+        "tags": ["エフェクト", "粒子", "流動", "動的", "美的"],
+        "difficulty": "上級",
+        "duration": "長時間",
+        "use_cases": ["概念表現", "アート", "プレゼンテーション"],
+        "learning_objectives": [
+            "粒子システムによるデータ表現技法",
+            "美的効果と情報伝達のバランス調整"
+        ],
+        "related_items": ["022", "024"]
+    },
+    {
+        "id": "024",
+        "category": "表現テクニック",
+        "subcategory": "インタラクティブダッシュボード",
+        "title": "リアルタイム業績監視",
+        "video_url": "assets/animations/techniques/dashboard.html",
+        "description": "ユーザー操作に応答する動的なダッシュボード。リアルタイムデータの包括的管理を実現します。",
+        "points": [
+            "リアルタイムデータ更新",
+            "複数グラフの連動表示",
+            "ドリルダウン機能付き詳細表示"
+        ],
+        "usage": "業績監視、KPI管理、システム監視",
+        "keywords": ["インタラクティブ", "ダッシュボード", "リアルタイム", "業績", "監視"],
+        "tags": ["ダッシュボード", "リアルタイム", "監視", "業績", "管理"],
+        "difficulty": "上級",
+        "duration": "長時間",
+        "use_cases": ["業績管理", "監視", "分析"],
+        "learning_objectives": [
+            "インタラクティブUI設計手法",
+            "リアルタイムデータ表示最適化技法"
+        ],
+        "related_items": ["009", "006"]
+    },
+    {
+        "id": "025",
+        "category": "用途・シーン別",
+        "subcategory": "市場分析レポート",
+        "title": "競合他社比較分析",
+        "video_url": "assets/animations/use-cases/market-analysis.html",
+        "description": "市場動向と競合状況を包括的に分析。戦略策定の基礎情報を効果的に可視化します。",
+        "points": [
+            "市場シェアの動向表示",
+            "競合他社との比較分析",
+            "成長機会の視覚的特定"
+        ],
+        "usage": "戦略会議、市場調査報告、投資判断",
+        "keywords": ["市場", "分析", "競合", "比較", "戦略", "シェア"],
+        "tags": ["市場", "競合", "戦略", "分析", "比較"],
+        "difficulty": "上級",
+        "duration": "長時間",
+        "use_cases": ["戦略", "市場調査", "投資"],
+        "learning_objectives": [
+            "競合分析の効果的な視覚化手法",
+            "戦略的洞察を導く情報整理技法"
+        ],
+        "related_items": ["013", "026"]
+    },
+    {
+        "id": "026",
+        "category": "用途・シーン別",
+        "subcategory": "年次売上報告",
+        "title": "年次業績総括",
+        "video_url": "assets/animations/use-cases/annual-report.html",
+        "description": "年間の売上実績を多角的に分析。ステークホルダーへの包括的な報告を実現します。",
+        "points": [
+            "年間実績の総合表示",
+            "月別・四半期別の詳細分析",
+            "目標達成度の可視化"
+        ],
+        "usage": "株主総会、取締役会、年次報告書",
+        "keywords": ["年次", "売上", "報告", "業績", "実績", "総括"],
+        "tags": ["年次", "売上", "報告", "業績", "総括"],
+        "difficulty": "中級",
+        "duration": "長時間",
+        "use_cases": ["株主報告", "経営報告", "業績評価"],
+        "learning_objectives": [
+            "年次データの効果的な統合表示技法",
+            "ステークホルダー向け報告資料作成手法"
+        ],
+        "related_items": ["009", "027"]
+    },
+    {
+        "id": "027",
+        "category": "用途・シーン別",
+        "subcategory": "顧客満足度調査",
+        "title": "顧客体験分析",
+        "video_url": "assets/animations/use-cases/customer-survey.html",
+        "description": "顧客満足度調査結果を多面的に可視化。サービス改善の指針を明確に示します。",
+        "points": [
+            "満足度スコアの分布表示",
+            "改善ポイントの特定",
+            "顧客セグメント別分析"
+        ],
+        "usage": "サービス改善、品質管理、顧客関係管理",
+        "keywords": ["顧客", "満足度", "調査", "体験", "分析", "改善"],
+        "tags": ["顧客", "満足度", "調査", "体験", "CX"],
+        "difficulty": "中級",
+        "duration": "中時間",
+        "use_cases": ["顧客管理", "サービス改善", "品質管理"],
+        "learning_objectives": [
+            "顧客データの多面的可視化技法",
+            "改善アクションを導く分析表現手法"
+        ],
+        "related_items": ["015", "028"]
+    },
+    {
+        "id": "028",
+        "category": "用途・シーン別",
+        "subcategory": "プロジェクト進捗管理",
+        "title": "大規模開発プロジェクト",
+        "video_url": "assets/animations/use-cases/project-management.html",
+        "description": "プロジェクトの進捗状況を包括的に管理。リスクと成果を同時に可視化します。",
+        "points": [
+            "進捗率のリアルタイム表示",
+            "マイルストーンの達成状況",
+            "リソース配分の最適化表示"
+        ],
+        "usage": "プロジェクト管理、進捗報告、リスク管理",
+        "keywords": ["プロジェクト", "進捗", "管理", "開発", "マイルストーン"],
+        "tags": ["プロジェクト", "進捗", "管理", "開発", "計画"],
+        "difficulty": "中級",
+        "duration": "中時間",
+        "use_cases": ["プロジェクト管理", "開発", "計画"],
+        "learning_objectives": [
+            "プロジェクト状況の包括的可視化技法",
+            "進捗とリスクの同時表示手法"
+        ],
+        "related_items": ["007", "029"]
+    },
+    {
+        "id": "029",
+        "category": "用途・シーン別",
+        "subcategory": "競合他社比較",
+        "title": "業界ポジション分析",
+        "video_url": "assets/animations/use-cases/competitor-analysis.html",
+        "description": "自社と競合他社の相対的ポジションを分析。戦略的優位性を明確化します。",
+        "points": [
+            "競合マップでのポジショニング",
+            "強み・弱みの相対評価",
+            "市場機会の特定表示"
+        ],
+        "usage": "戦略策定、競合分析、ポジショニング",
+        "keywords": ["競合", "比較", "ポジション", "分析", "業界", "戦略"],
+        "tags": ["競合", "戦略", "ポジション", "分析", "比較"],
+        "difficulty": "上級",
+        "duration": "長時間",
+        "use_cases": ["戦略", "競合分析", "ポジショニング"],
+        "learning_objectives": [
+            "競合ポジショニングの効果的な可視化技法",
+            "戦略的洞察を促す比較表現手法"
+        ],
+        "related_items": ["025", "030"]
+    },
+    {
+        "id": "030",
+        "category": "用途・シーン別",
+        "subcategory": "ROI分析表示",
+        "title": "投資収益率分析",
+        "video_url": "assets/animations/use-cases/roi-analysis.html",
+        "description": "投資対効果を多角的に分析。意思決定を支援する包括的な投資評価を提供します。",
+        "points": [
+            "投資収益率の時系列変化",
+            "投資項目別の効果比較",
+            "将来予測シナリオの表示"
+        ],
+        "usage": "投資判断、事業評価、予算策定",
+        "keywords": ["ROI", "投資", "収益率", "分析", "効果", "評価"],
+        "tags": ["投資", "ROI", "収益", "評価", "分析"],
+        "difficulty": "上級",
+        "duration": "長時間",
+        "use_cases": ["投資判断", "事業評価", "財務分析"],
+        "learning_objectives": [
+            "投資効果の包括的可視化技法",
+            "将来予測を含む分析表現手法"
+        ],
+        "related_items": ["017", "026"]
+    }
+]

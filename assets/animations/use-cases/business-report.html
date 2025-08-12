@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ビジネスレポートアニメーション - 四半期業績報告</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">四半期業績報告</h2>
+        
+        <div class="chart-area">
+            <div class="business-report-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="businessReportChart">
+                    <!-- Business report components will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Business report data
+        const businessData = {
+            header: {
+                company: "株式会社サンプル",
+                period: "2024年度 第3四半期",
+                reportDate: "2024年10月31日"
+            },
+            kpis: [
+                { title: "売上高", current: 15200, previous: 14800, target: 16000, unit: "万円" },
+                { title: "営業利益", current: 2280, previous: 2220, target: 2500, unit: "万円" },
+                { title: "利益率", current: 15.0, previous: 15.0, target: 15.6, unit: "%" },
+                { title: "顧客数", current: 2840, previous: 2650, target: 3000, unit: "社" }
+            ],
+            salesData: [
+                { month: "7月", actual: 4800, target: 5000, previous: 4600 },
+                { month: "8月", actual: 5200, target: 5300, previous: 4900 },
+                { month: "9月", actual: 5200, target: 5700, previous: 5300 }
+            ],
+            departmentData: [
+                { name: "営業部", budget: 3500, actual: 3200, variance: -8.6 },
+                { name: "開発部", budget: 4200, actual: 4500, variance: 7.1 },
+                { name: "マーケティング部", budget: 2800, actual: 2700, variance: -3.6 },
+                { name: "管理部", budget: 1500, actual: 1400, variance: -6.7 }
+            ]
+        };
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const width = 800;
+        const height = 400;
+
+        function initChart() {
+            const svg = document.getElementById('businessReportChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add report layout
+            addReportLayout(svg);
+        }
+
+        function addReportLayout(svg) {
+            // Background
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('width', width);
+            bg.setAttribute('height', height);
+            bg.setAttribute('fill', '#fafafa');
+            svg.appendChild(bg);
+            
+            // Header section
+            addReportHeader(svg);
+            
+            // KPI summary section
+            addKPISummary(svg);
+            
+            // Sales trend chart
+            addSalesTrend(svg);
+            
+            // Department performance
+            addDepartmentPerformance(svg);
+        }
+
+        function addReportHeader(svg) {
+            // Header background
+            const headerBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            headerBg.setAttribute('x', '0');
+            headerBg.setAttribute('y', '0');
+            headerBg.setAttribute('width', width);
+            headerBg.setAttribute('height', '50');
+            headerBg.setAttribute('fill', '#2c3e50');
+            headerBg.setAttribute('opacity', '0');
+            headerBg.setAttribute('class', 'header-bg');
+            svg.appendChild(headerBg);
+            
+            // Company name
+            const companyName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            companyName.setAttribute('x', '20');
+            companyName.setAttribute('y', '20');
+            companyName.setAttribute('class', 'company-name');
+            companyName.setAttribute('opacity', '0');
+            companyName.textContent = businessData.header.company;
+            svg.appendChild(companyName);
+            
+            // Report period
+            const period = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            period.setAttribute('x', '20');
+            period.setAttribute('y', '38');
+            period.setAttribute('class', 'report-period');
+            period.setAttribute('opacity', '0');
+            period.textContent = businessData.header.period;
+            svg.appendChild(period);
+            
+            // Report date
+            const reportDate = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            reportDate.setAttribute('x', width - 20);
+            reportDate.setAttribute('y', '30');
+            reportDate.setAttribute('class', 'report-date');
+            reportDate.setAttribute('text-anchor', 'end');
+            reportDate.setAttribute('opacity', '0');
+            reportDate.textContent = businessData.header.reportDate;
+            svg.appendChild(reportDate);
+        }
+
+        function addKPISummary(svg) {
+            const startY = 60;
+            const kpiHeight = 70;
+            const kpiWidth = (width - 40) / 4;
+            
+            businessData.kpis.forEach((kpi, index) => {
+                const x = 20 + kpiWidth * index;
+                const y = startY;
+                
+                // KPI card background
+                const cardBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                cardBg.setAttribute('x', x);
+                cardBg.setAttribute('y', y);
+                cardBg.setAttribute('width', kpiWidth - 10);
+                cardBg.setAttribute('height', kpiHeight);
+                cardBg.setAttribute('fill', 'white');
+                cardBg.setAttribute('stroke', '#e0e0e0');
+                cardBg.setAttribute('stroke-width', '1');
+                cardBg.setAttribute('rx', '5');
+                cardBg.setAttribute('opacity', '0');
+                cardBg.setAttribute('class', 'kpi-card');
+                svg.appendChild(cardBg);
+                
+                // KPI title
+                const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                title.setAttribute('x', x + 10);
+                title.setAttribute('y', y + 18);
+                title.setAttribute('class', 'kpi-title');
+                title.setAttribute('opacity', '0');
+                title.textContent = kpi.title;
+                svg.appendChild(title);
+                
+                // Current value
+                const currentValue = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                currentValue.setAttribute('x', x + 10);
+                currentValue.setAttribute('y', y + 38);
+                currentValue.setAttribute('class', 'kpi-current');
+                currentValue.setAttribute('opacity', '0');
+                currentValue.textContent = '0'; // Start with 0 for animation
+                currentValue.setAttribute('data-target', kpi.current);
+                currentValue.setAttribute('data-unit', kpi.unit);
+                svg.appendChild(currentValue);
+                
+                // Growth indicator
+                const growth = ((kpi.current - kpi.previous) / kpi.previous) * 100;
+                const growthText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                growthText.setAttribute('x', x + 10);
+                growthText.setAttribute('y', y + 55);
+                growthText.setAttribute('class', 'kpi-growth');
+                growthText.setAttribute('fill', growth >= 0 ? '#10B981' : '#EF4444');
+                growthText.setAttribute('opacity', '0');
+                growthText.textContent = (growth >= 0 ? '+' : '') + growth.toFixed(1) + '%';
+                svg.appendChild(growthText);
+                
+                // Progress bar for target achievement
+                const progressBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                progressBg.setAttribute('x', x + kpiWidth - 30);
+                progressBg.setAttribute('y', y + 15);
+                progressBg.setAttribute('width', '8');
+                progressBg.setAttribute('height', '40');
+                progressBg.setAttribute('fill', '#f0f0f0');
+                progressBg.setAttribute('rx', '4');
+                progressBg.setAttribute('opacity', '0');
+                svg.appendChild(progressBg);
+                
+                const progressBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                const achievementRate = Math.min(kpi.current / kpi.target, 1);
+                progressBar.setAttribute('x', x + kpiWidth - 30);
+                progressBar.setAttribute('y', y + 15 + 40 * (1 - achievementRate));
+                progressBar.setAttribute('width', '8');
+                progressBar.setAttribute('height', 0);
+                progressBar.setAttribute('fill', achievementRate >= 0.9 ? '#10B981' : achievementRate >= 0.7 ? '#F59E0B' : '#EF4444');
+                progressBar.setAttribute('rx', '4');
+                progressBar.setAttribute('opacity', '0');
+                progressBar.setAttribute('class', 'progress-bar');
+                progressBar.setAttribute('data-target-height', 40 * achievementRate);
+                svg.appendChild(progressBar);
+            });
+        }
+
+        function addSalesTrend(svg) {
+            const chartX = 20;
+            const chartY = 150;
+            const chartWidth = 380;
+            const chartHeight = 180;
+            
+            // Chart background
+            const chartBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            chartBg.setAttribute('x', chartX);
+            chartBg.setAttribute('y', chartY);
+            chartBg.setAttribute('width', chartWidth);
+            chartBg.setAttribute('height', chartHeight);
+            chartBg.setAttribute('fill', 'white');
+            chartBg.setAttribute('stroke', '#e0e0e0');
+            chartBg.setAttribute('stroke-width', '1');
+            chartBg.setAttribute('rx', '5');
+            chartBg.setAttribute('opacity', '0');
+            chartBg.setAttribute('class', 'sales-chart-bg');
+            svg.appendChild(chartBg);
+            
+            // Chart title
+            const chartTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            chartTitle.setAttribute('x', chartX + 15);
+            chartTitle.setAttribute('y', chartY + 25);
+            chartTitle.setAttribute('class', 'chart-title');
+            chartTitle.setAttribute('opacity', '0');
+            chartTitle.textContent = '月別売上実績 vs 目標';
+            svg.appendChild(chartTitle);
+            
+            // Add grouped bar chart
+            const barWidth = 25;
+            const barSpacing = 10;
+            const groupSpacing = 60;
+            const maxValue = Math.max(...businessData.salesData.map(d => Math.max(d.actual, d.target, d.previous)));
+            
+            businessData.salesData.forEach((data, index) => {
+                const groupX = chartX + 30 + groupSpacing * index;
+                const baseY = chartY + chartHeight - 40;
+                
+                // Previous year bar
+                const prevHeight = (data.previous / maxValue) * 120;
+                const prevBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                prevBar.setAttribute('x', groupX);
+                prevBar.setAttribute('y', baseY);
+                prevBar.setAttribute('width', barWidth);
+                prevBar.setAttribute('height', 0);
+                prevBar.setAttribute('fill', '#bdc3c7');
+                prevBar.setAttribute('opacity', '0');
+                prevBar.setAttribute('class', 'prev-bar');
+                prevBar.setAttribute('data-target-height', prevHeight);
+                svg.appendChild(prevBar);
+                
+                // Target bar
+                const targetHeight = (data.target / maxValue) * 120;
+                const targetBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                targetBar.setAttribute('x', groupX + barWidth + 5);
+                targetBar.setAttribute('y', baseY);
+                targetBar.setAttribute('width', barWidth);
+                targetBar.setAttribute('height', 0);
+                targetBar.setAttribute('fill', '#f39c12');
+                targetBar.setAttribute('opacity', '0');
+                targetBar.setAttribute('class', 'target-bar');
+                targetBar.setAttribute('data-target-height', targetHeight);
+                svg.appendChild(targetBar);
+                
+                // Actual bar
+                const actualHeight = (data.actual / maxValue) * 120;
+                const actualBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                actualBar.setAttribute('x', groupX + (barWidth + 5) * 2);
+                actualBar.setAttribute('y', baseY);
+                actualBar.setAttribute('width', barWidth);
+                actualBar.setAttribute('height', 0);
+                actualBar.setAttribute('fill', data.actual >= data.target ? '#27ae60' : '#e74c3c');
+                actualBar.setAttribute('opacity', '0');
+                actualBar.setAttribute('class', 'actual-bar');
+                actualBar.setAttribute('data-target-height', actualHeight);
+                
+                // Add hover events
+                actualBar.addEventListener('mouseenter', (e) => showTooltip(e, data));
+                actualBar.addEventListener('mouseleave', hideTooltip);
+                
+                svg.appendChild(actualBar);
+                
+                // Month label
+                const monthLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                monthLabel.setAttribute('x', groupX + barWidth * 1.5 + 5);
+                monthLabel.setAttribute('y', baseY + 20);
+                monthLabel.setAttribute('class', 'month-label');
+                monthLabel.setAttribute('text-anchor', 'middle');
+                monthLabel.setAttribute('opacity', '0');
+                monthLabel.textContent = data.month;
+                svg.appendChild(monthLabel);
+            });
+            
+            // Legend
+            const legendData = [
+                { name: '前年同期', color: '#bdc3c7' },
+                { name: '目標', color: '#f39c12' },
+                { name: '実績', color: '#27ae60' }
+            ];
+            
+            legendData.forEach((legend, index) => {
+                const legendX = chartX + 15;
+                const legendY = chartY + 45 + index * 20;
+                
+                const legendColor = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                legendColor.setAttribute('x', legendX);
+                legendColor.setAttribute('y', legendY - 8);
+                legendColor.setAttribute('width', '12');
+                legendColor.setAttribute('height', '12');
+                legendColor.setAttribute('fill', legend.color);
+                legendColor.setAttribute('opacity', '0');
+                legendColor.setAttribute('class', 'legend-color');
+                svg.appendChild(legendColor);
+                
+                const legendText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                legendText.setAttribute('x', legendX + 18);
+                legendText.setAttribute('y', legendY + 2);
+                legendText.setAttribute('class', 'legend-text');
+                legendText.setAttribute('opacity', '0');
+                legendText.textContent = legend.name;
+                svg.appendChild(legendText);
+            });
+        }
+
+        function addDepartmentPerformance(svg) {
+            const tableX = 420;
+            const tableY = 150;
+            const tableWidth = 360;
+            const tableHeight = 180;
+            
+            // Table background
+            const tableBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            tableBg.setAttribute('x', tableX);
+            tableBg.setAttribute('y', tableY);
+            tableBg.setAttribute('width', tableWidth);
+            tableBg.setAttribute('height', tableHeight);
+            tableBg.setAttribute('fill', 'white');
+            tableBg.setAttribute('stroke', '#e0e0e0');
+            tableBg.setAttribute('stroke-width', '1');
+            tableBg.setAttribute('rx', '5');
+            tableBg.setAttribute('opacity', '0');
+            tableBg.setAttribute('class', 'dept-table-bg');
+            svg.appendChild(tableBg);
+            
+            // Table title
+            const tableTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            tableTitle.setAttribute('x', tableX + 15);
+            tableTitle.setAttribute('y', tableY + 25);
+            tableTitle.setAttribute('class', 'chart-title');
+            tableTitle.setAttribute('opacity', '0');
+            tableTitle.textContent = '部門別予算実績';
+            svg.appendChild(tableTitle);
+            
+            // Table header
+            const headers = ['部門', '予算', '実績', '差異'];
+            const colWidths = [100, 80, 80, 80];
+            let currentX = tableX + 15;
+            
+            headers.forEach((header, index) => {
+                const headerText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                headerText.setAttribute('x', currentX);
+                headerText.setAttribute('y', tableY + 50);
+                headerText.setAttribute('class', 'table-header');
+                headerText.setAttribute('opacity', '0');
+                headerText.textContent = header;
+                svg.appendChild(headerText);
+                currentX += colWidths[index];
+            });
+            
+            // Table rows
+            businessData.departmentData.forEach((dept, rowIndex) => {
+                const rowY = tableY + 75 + rowIndex * 25;
+                currentX = tableX + 15;
+                
+                // Department name
+                const deptName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                deptName.setAttribute('x', currentX);
+                deptName.setAttribute('y', rowY);
+                deptName.setAttribute('class', 'table-cell');
+                deptName.setAttribute('opacity', '0');
+                deptName.textContent = dept.name;
+                svg.appendChild(deptName);
+                currentX += colWidths[0];
+                
+                // Budget
+                const budget = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                budget.setAttribute('x', currentX);
+                budget.setAttribute('y', rowY);
+                budget.setAttribute('class', 'table-cell');
+                budget.setAttribute('opacity', '0');
+                budget.textContent = dept.budget + '万円';
+                svg.appendChild(budget);
+                currentX += colWidths[1];
+                
+                // Actual
+                const actual = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                actual.setAttribute('x', currentX);
+                actual.setAttribute('y', rowY);
+                actual.setAttribute('class', 'table-cell');
+                actual.setAttribute('opacity', '0');
+                actual.textContent = '0万円'; // Start with 0 for animation
+                actual.setAttribute('data-target', dept.actual);
+                svg.appendChild(actual);
+                currentX += colWidths[2];
+                
+                // Variance
+                const variance = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                variance.setAttribute('x', currentX);
+                variance.setAttribute('y', rowY);
+                variance.setAttribute('class', 'table-cell');
+                variance.setAttribute('fill', dept.variance >= 0 ? '#10B981' : '#EF4444');
+                variance.setAttribute('opacity', '0');
+                variance.textContent = (dept.variance >= 0 ? '+' : '') + dept.variance.toFixed(1) + '%';
+                svg.appendChild(variance);
+            });
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateBusinessReport();
+        }
+
+        function animateBusinessReport() {
+            // Phase 1: Header
+            animateHeader(() => {
+                // Phase 2: KPI Cards
+                animateKPICards(() => {
+                    // Phase 3: Sales Chart
+                    animateSalesChart(() => {
+                        // Phase 4: Department Table
+                        animateDepartmentTable(() => {
+                            isPlaying = false;
+                            document.getElementById('playBtn').style.opacity = '1';
+                        });
+                    });
+                });
+            });
+        }
+
+        function animateHeader(callback) {
+            const svg = document.getElementById('businessReportChart');
+            const headerElements = svg.querySelectorAll('.header-bg, .company-name, .report-period, .report-date');
+            
+            let elementIndex = 0;
+            
+            function animateNext() {
+                if (elementIndex >= headerElements.length) {
+                    callback();
+                    return;
+                }
+                
+                const element = headerElements[elementIndex];
+                
+                let startTime = null;
+                const duration = 600 / animationSpeed;
+                
+                function animate(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    
+                    element.setAttribute('opacity', progress);
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        elementIndex++;
+                        setTimeout(() => animateNext(), 200 / animationSpeed);
+                    }
+                }
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animateNext();
+        }
+
+        function animateKPICards(callback) {
+            const svg = document.getElementById('businessReportChart');
+            const kpiCards = svg.querySelectorAll('.kpi-card');
+            const kpiTexts = svg.querySelectorAll('.kpi-title, .kpi-growth');
+            const kpiCurrents = svg.querySelectorAll('.kpi-current');
+            const progressBars = svg.querySelectorAll('.progress-bar');
+            
+            // Show cards first
+            kpiCards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.setAttribute('opacity', '1');
+                }, index * 150 / animationSpeed);
+            });
+            
+            // Show text elements
+            setTimeout(() => {
+                kpiTexts.forEach(text => {
+                    text.setAttribute('opacity', '1');
+                });
+            }, 600 / animationSpeed);
+            
+            // Animate KPI values and progress bars
+            setTimeout(() => {
+                kpiCurrents.forEach((current, index) => {
+                    const targetValue = parseFloat(current.getAttribute('data-target'));
+                    const unit = current.getAttribute('data-unit');
+                    const progressBar = progressBars[index];
+                    const targetHeight = parseFloat(progressBar.getAttribute('data-target-height'));
+                    
+                    let startTime = null;
+                    const duration = 1500 / animationSpeed;
+                    
+                    function animate(timestamp) {
+                        if (!startTime) startTime = timestamp;
+                        const progress = Math.min((timestamp - startTime) / duration, 1);
+                        
+                        const currentValue = targetValue * progress;
+                        current.textContent = Math.round(currentValue).toLocaleString() + unit;
+                        current.setAttribute('opacity', progress);
+                        
+                        const currentHeight = targetHeight * progress;
+                        progressBar.setAttribute('height', currentHeight);
+                        progressBar.setAttribute('opacity', progress);
+                        
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        }
+                    }
+                    
+                    setTimeout(() => requestAnimationFrame(animate), index * 200 / animationSpeed);
+                });
+            }, 800 / animationSpeed);
+            
+            setTimeout(callback, 2500 / animationSpeed);
+        }
+
+        function animateSalesChart(callback) {
+            const svg = document.getElementById('businessReportChart');
+            const chartBg = svg.querySelector('.sales-chart-bg');
+            const chartElements = svg.querySelectorAll('.chart-title, .legend-color, .legend-text, .month-label');
+            const bars = svg.querySelectorAll('.prev-bar, .target-bar, .actual-bar');
+            
+            // Show background
+            chartBg.setAttribute('opacity', '1');
+            
+            // Show static elements
+            setTimeout(() => {
+                chartElements.forEach(element => {
+                    element.setAttribute('opacity', '1');
+                });
+            }, 300 / animationSpeed);
+            
+            // Animate bars
+            setTimeout(() => {
+                bars.forEach((bar, index) => {
+                    const targetHeight = parseFloat(bar.getAttribute('data-target-height'));
+                    
+                    let startTime = null;
+                    const duration = 1000 / animationSpeed;
+                    
+                    function animate(timestamp) {
+                        if (!startTime) startTime = timestamp;
+                        const progress = Math.min((timestamp - startTime) / duration, 1);
+                        
+                        const currentHeight = targetHeight * progress;
+                        bar.setAttribute('height', currentHeight);
+                        bar.setAttribute('y', parseFloat(bar.getAttribute('y')) - currentHeight);
+                        bar.setAttribute('opacity', progress);
+                        
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        }
+                    }
+                    
+                    setTimeout(() => requestAnimationFrame(animate), index * 100 / animationSpeed);
+                });
+            }, 600 / animationSpeed);
+            
+            setTimeout(callback, 2000 / animationSpeed);
+        }
+
+        function animateDepartmentTable(callback) {
+            const svg = document.getElementById('businessReportChart');
+            const tableBg = svg.querySelector('.dept-table-bg');
+            const tableElements = svg.querySelectorAll('.table-header, .table-cell');
+            const actualValues = svg.querySelectorAll('.table-cell[data-target]');
+            
+            // Show background
+            tableBg.setAttribute('opacity', '1');
+            
+            // Show table elements
+            setTimeout(() => {
+                tableElements.forEach((element, index) => {
+                    setTimeout(() => {
+                        element.setAttribute('opacity', '1');
+                    }, index * 100 / animationSpeed);
+                });
+            }, 300 / animationSpeed);
+            
+            // Animate actual values
+            setTimeout(() => {
+                actualValues.forEach((element, index) => {
+                    const targetValue = parseFloat(element.getAttribute('data-target'));
+                    
+                    let startTime = null;
+                    const duration = 1000 / animationSpeed;
+                    
+                    function animate(timestamp) {
+                        if (!startTime) startTime = timestamp;
+                        const progress = Math.min((timestamp - startTime) / duration, 1);
+                        
+                        const currentValue = targetValue * progress;
+                        element.textContent = Math.round(currentValue) + '万円';
+                        
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        }
+                    }
+                    
+                    setTimeout(() => requestAnimationFrame(animate), index * 200 / animationSpeed);
+                });
+            }, 800 / animationSpeed);
+            
+            setTimeout(callback, 2000 / animationSpeed);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('businessReportChart');
+            const allElements = svg.querySelectorAll('*:not(rect:first-child)');
+            
+            allElements.forEach(element => {
+                element.setAttribute('opacity', '0');
+                
+                if (element.classList.contains('kpi-current')) {
+                    element.textContent = '0';
+                }
+                if (element.getAttribute('data-target')) {
+                    element.textContent = '0万円';
+                }
+                if (element.classList.contains('progress-bar')) {
+                    element.setAttribute('height', '0');
+                }
+                if (element.classList.contains('prev-bar') || element.classList.contains('target-bar') || element.classList.contains('actual-bar')) {
+                    element.setAttribute('height', '0');
+                }
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, data) {
+            const tooltip = document.getElementById('tooltip');
+            const achievement = (data.actual / data.target) * 100;
+            
+            tooltip.innerHTML = `
+                <strong>${data.month}</strong><br>
+                目標: ${data.target.toLocaleString()}万円<br>
+                実績: ${data.actual.toLocaleString()}万円<br>
+                達成率: ${achievement.toFixed(1)}%
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <style>
+        .company-name {
+            fill: white;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .report-period {
+            fill: #ecf0f1;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .report-date {
+            fill: #ecf0f1;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .kpi-title {
+            fill: #7f8c8d;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .kpi-current {
+            fill: #2c3e50;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .kpi-growth {
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .chart-title {
+            fill: #2c3e50;
+            font-size: 13px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .legend-text {
+            fill: #7f8c8d;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .month-label {
+            fill: #7f8c8d;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .table-header {
+            fill: #2c3e50;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .table-cell {
+            fill: #34495e;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .prev-bar, .target-bar, .actual-bar {
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+        
+        .prev-bar:hover, .target-bar:hover, .actual-bar:hover {
+            opacity: 0.8;
+        }
+    </style>
+</body>
+</html>

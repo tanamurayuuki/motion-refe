@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>タイムラインアニメーション - プロジェクト進捗</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">プロジェクト開発タイムライン</h2>
+        
+        <div class="chart-area">
+            <div class="timeline-container" style="padding: 40px 20px; position: relative;">
+                
+                <!-- Timeline Line -->
+                <div class="timeline-line" style="position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: linear-gradient(to bottom, #FF6B6B, #4ECDC4, #45B7D1, #96CEB4, #FECA57); transform: translateX(-50%); opacity: 0;"></div>
+                
+                <!-- Timeline Items -->
+                <div class="timeline-items" style="position: relative; z-index: 10;">
+                    
+                    <!-- Planning Phase -->
+                    <div class="timeline-item left" style="display: flex; align-items: center; margin-bottom: 80px; opacity: 0;">
+                        <div class="timeline-content" style="flex: 1; padding-right: 60px; text-align: right;">
+                            <div class="timeline-card" style="background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(255, 107, 107, 0.2); border-left: 5px solid #FF6B6B;">
+                                <h3 style="color: #FF6B6B; font-size: 20px; margin-bottom: 10px; display: flex; align-items: center; justify-content: flex-end;">
+                                    <span>企画・設計フェーズ</span>
+                                    <span style="margin-left: 10px;">📋</span>
+                                </h3>
+                                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">要件定義、システム設計、UI/UXデザイン</p>
+                                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                                    <span style="background: #FFE8E8; color: #FF6B6B; padding: 4px 12px; border-radius: 12px; font-size: 12px;">4週間</span>
+                                    <span style="background: #E8F8F5; color: #00C896; padding: 4px 12px; border-radius: 12px; font-size: 12px;">完了</span>
+                                </div>
+                                <div class="timeline-date" style="font-size: 12px; color: #999; margin-top: 10px;">2024年1月 - 2024年2月</div>
+                            </div>
+                        </div>
+                        <div class="timeline-marker" style="width: 20px; height: 20px; background: #FF6B6B; border-radius: 50%; border: 4px solid white; box-shadow: 0 0 0 4px #FF6B6B; position: absolute; left: 50%; transform: translateX(-50%); z-index: 20;"></div>
+                        <div style="flex: 1; padding-left: 60px;"></div>
+                    </div>
+
+                    <!-- Development Phase -->
+                    <div class="timeline-item right" style="display: flex; align-items: center; margin-bottom: 80px; opacity: 0;">
+                        <div style="flex: 1; padding-right: 60px;"></div>
+                        <div class="timeline-marker" style="width: 20px; height: 20px; background: #4ECDC4; border-radius: 50%; border: 4px solid white; box-shadow: 0 0 0 4px #4ECDC4; position: absolute; left: 50%; transform: translateX(-50%); z-index: 20;"></div>
+                        <div class="timeline-content" style="flex: 1; padding-left: 60px;">
+                            <div class="timeline-card" style="background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(78, 205, 196, 0.2); border-right: 5px solid #4ECDC4;">
+                                <h3 style="color: #4ECDC4; font-size: 20px; margin-bottom: 10px; display: flex; align-items: center;">
+                                    <span style="margin-right: 10px;">⚙️</span>
+                                    <span>開発フェーズ</span>
+                                </h3>
+                                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">フロントエンド・バックエンド開発、API実装</p>
+                                <div style="display: flex; gap: 10px;">
+                                    <span style="background: #E8FFFE; color: #4ECDC4; padding: 4px 12px; border-radius: 12px; font-size: 12px;">8週間</span>
+                                    <span style="background: #E8F8F5; color: #00C896; padding: 4px 12px; border-radius: 12px; font-size: 12px;">完了</span>
+                                </div>
+                                <div class="timeline-date" style="font-size: 12px; color: #999; margin-top: 10px;">2024年2月 - 2024年4月</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Testing Phase -->
+                    <div class="timeline-item left" style="display: flex; align-items: center; margin-bottom: 80px; opacity: 0;">
+                        <div class="timeline-content" style="flex: 1; padding-right: 60px; text-align: right;">
+                            <div class="timeline-card" style="background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(69, 183, 209, 0.2); border-left: 5px solid #45B7D1;">
+                                <h3 style="color: #45B7D1; font-size: 20px; margin-bottom: 10px; display: flex; align-items: center; justify-content: flex-end;">
+                                    <span>テスト・品質保証</span>
+                                    <span style="margin-left: 10px;">🔍</span>
+                                </h3>
+                                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">単体テスト、結合テスト、ユーザビリティテスト</p>
+                                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                                    <span style="background: #E8F4FD; color: #45B7D1; padding: 4px 12px; border-radius: 12px; font-size: 12px;">3週間</span>
+                                    <span style="background: #FFF3CD; color: #856404; padding: 4px 12px; border-radius: 12px; font-size: 12px;">進行中</span>
+                                </div>
+                                <div class="timeline-date" style="font-size: 12px; color: #999; margin-top: 10px;">2024年4月 - 2024年5月</div>
+                            </div>
+                        </div>
+                        <div class="timeline-marker" style="width: 20px; height: 20px; background: #45B7D1; border-radius: 50%; border: 4px solid white; box-shadow: 0 0 0 4px #45B7D1; position: absolute; left: 50%; transform: translateX(-50%); z-index: 20;"></div>
+                        <div style="flex: 1; padding-left: 60px;"></div>
+                    </div>
+
+                    <!-- Deployment Phase -->
+                    <div class="timeline-item right" style="display: flex; align-items: center; margin-bottom: 80px; opacity: 0;">
+                        <div style="flex: 1; padding-right: 60px;"></div>
+                        <div class="timeline-marker" style="width: 20px; height: 20px; background: #96CEB4; border-radius: 50%; border: 4px solid white; box-shadow: 0 0 0 4px #96CEB4; position: absolute; left: 50%; transform: translateX(-50%); z-index: 20;"></div>
+                        <div class="timeline-content" style="flex: 1; padding-left: 60px;">
+                            <div class="timeline-card" style="background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(150, 206, 180, 0.2); border-right: 5px solid #96CEB4;">
+                                <h3 style="color: #96CEB4; font-size: 20px; margin-bottom: 10px; display: flex; align-items: center;">
+                                    <span style="margin-right: 10px;">🚀</span>
+                                    <span>デプロイ・本番運用</span>
+                                </h3>
+                                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">本番環境デプロイ、監視設定、運用開始</p>
+                                <div style="display: flex; gap: 10px;">
+                                    <span style="background: #F0F9FF; color: #96CEB4; padding: 4px 12px; border-radius: 12px; font-size: 12px;">2週間</span>
+                                    <span style="background: #FFF3CD; color: #856404; padding: 4px 12px; border-radius: 12px; font-size: 12px;">予定</span>
+                                </div>
+                                <div class="timeline-date" style="font-size: 12px; color: #999; margin-top: 10px;">2024年5月 - 2024年6月</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Maintenance Phase -->
+                    <div class="timeline-item left" style="display: flex; align-items: center; margin-bottom: 40px; opacity: 0;">
+                        <div class="timeline-content" style="flex: 1; padding-right: 60px; text-align: right;">
+                            <div class="timeline-card" style="background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(254, 202, 87, 0.2); border-left: 5px solid #FECA57;">
+                                <h3 style="color: #FECA57; font-size: 20px; margin-bottom: 10px; display: flex; align-items: center; justify-content: flex-end;">
+                                    <span>保守・機能拡張</span>
+                                    <span style="margin-left: 10px;">🔧</span>
+                                </h3>
+                                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">継続的改善、新機能追加、パフォーマンス最適化</p>
+                                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                                    <span style="background: #FFF8E1; color: #FECA57; padding: 4px 12px; border-radius: 12px; font-size: 12px;">継続</span>
+                                    <span style="background: #E3F2FD; color: #1976D2; padding: 4px 12px; border-radius: 12px; font-size: 12px;">計画中</span>
+                                </div>
+                                <div class="timeline-date" style="font-size: 12px; color: #999; margin-top: 10px;">2024年6月〜</div>
+                            </div>
+                        </div>
+                        <div class="timeline-marker" style="width: 20px; height: 20px; background: #FECA57; border-radius: 50%; border: 4px solid white; box-shadow: 0 0 0 4px #FECA57; position: absolute; left: 50%; transform: translateX(-50%); z-index: 20;"></div>
+                        <div style="flex: 1; padding-left: 60px;"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            currentStep = 0;
+            animateTimeline();
+        }
+
+        function animateTimeline() {
+            // First, show the timeline line
+            const timelineLine = document.querySelector('.timeline-line');
+            timelineLine.style.transition = `all ${2 / animationSpeed}s ease-in-out`;
+            timelineLine.style.opacity = '1';
+            timelineLine.style.height = '100%';
+            
+            // Add drawing animation to the line
+            timelineLine.style.transformOrigin = 'top';
+            timelineLine.style.transform = 'translateX(-50%) scaleY(0)';
+            
+            setTimeout(() => {
+                timelineLine.style.transform = 'translateX(-50%) scaleY(1)';
+                
+                // Start animating timeline items after line animation
+                setTimeout(() => {
+                    animateTimelineItems();
+                }, 500 / animationSpeed);
+                
+            }, 100);
+        }
+
+        function animateTimelineItems() {
+            const items = document.querySelectorAll('.timeline-item');
+            
+            if (currentStep >= items.length || !isPlaying) {
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+                return;
+            }
+            
+            const item = items[currentStep];
+            const card = item.querySelector('.timeline-card');
+            const marker = item.querySelector('.timeline-marker');
+            
+            // Animate marker first
+            marker.style.transform = 'translateX(-50%) scale(0)';
+            marker.style.transition = `all ${0.5 / animationSpeed}s cubic-bezier(0.16, 1, 0.3, 1)`;
+            
+            setTimeout(() => {
+                marker.style.transform = 'translateX(-50%) scale(1)';
+                
+                // Add pulse effect to marker
+                setTimeout(() => {
+                    marker.style.animation = `pulse ${0.6 / animationSpeed}s ease-in-out`;
+                }, 200 / animationSpeed);
+                
+            }, 100);
+            
+            // Animate timeline item
+            const isLeft = item.classList.contains('left');
+            const initialTransform = isLeft ? 'translateX(-50px)' : 'translateX(50px)';
+            
+            item.style.transform = initialTransform;
+            item.style.transition = `all ${0.8 / animationSpeed}s cubic-bezier(0.16, 1, 0.3, 1)`;
+            
+            setTimeout(() => {
+                item.style.opacity = '1';
+                item.style.transform = 'translateX(0)';
+                
+                // Add hover effect after animation
+                setTimeout(() => {
+                    addCardHoverEffect(card);
+                }, 500 / animationSpeed);
+                
+            }, 300 / animationSpeed);
+            
+            // Move to next item
+            currentStep++;
+            animationTimeout = setTimeout(() => {
+                animateTimelineItems();
+            }, 800 / animationSpeed);
+        }
+
+        function addCardHoverEffect(card) {
+            card.addEventListener('mouseenter', () => {
+                if (!isPlaying) {
+                    card.style.transform = 'translateY(-5px) scale(1.02)';
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.boxShadow = '0 15px 40px rgba(0, 0, 0, 0.15)';
+                }
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                if (!isPlaying) {
+                    card.style.transform = 'translateY(0) scale(1)';
+                    card.style.boxShadow = card.style.boxShadow.replace('0.15', '0.2');
+                }
+            });
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            // Reset timeline line
+            const timelineLine = document.querySelector('.timeline-line');
+            timelineLine.style.transition = 'none';
+            timelineLine.style.opacity = '0';
+            timelineLine.style.transform = 'translateX(-50%) scaleY(0)';
+            
+            // Reset timeline items
+            const items = document.querySelectorAll('.timeline-item');
+            items.forEach((item, index) => {
+                const marker = item.querySelector('.timeline-marker');
+                
+                item.style.transition = 'none';
+                item.style.opacity = '0';
+                item.style.transform = item.classList.contains('left') ? 'translateX(-50px)' : 'translateX(50px)';
+                
+                marker.style.transition = 'none';
+                marker.style.transform = 'translateX(-50%) scale(0)';
+                marker.style.animation = '';
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        // Add progress indicator
+        function createProgressIndicator() {
+            const container = document.querySelector('.timeline-container');
+            const progressBar = document.createElement('div');
+            progressBar.className = 'progress-indicator';
+            progressBar.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(255, 255, 255, 0.9);
+                padding: 10px 20px;
+                border-radius: 25px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                font-size: 14px;
+                font-weight: 600;
+                color: #2c3e50;
+                z-index: 1000;
+                display: none;
+            `;
+            
+            document.body.appendChild(progressBar);
+            
+            // Update progress during animation
+            const updateProgress = () => {
+                if (isPlaying) {
+                    const totalSteps = document.querySelectorAll('.timeline-item').length;
+                    const progress = Math.round((currentStep / totalSteps) * 100);
+                    progressBar.textContent = `進捗: ${currentStep}/${totalSteps} (${progress}%)`;
+                    progressBar.style.display = 'block';
+                    
+                    if (currentStep >= totalSteps) {
+                        setTimeout(() => {
+                            progressBar.style.display = 'none';
+                        }, 2000);
+                    } else {
+                        requestAnimationFrame(updateProgress);
+                    }
+                }
+            };
+            
+            // Start progress tracking when animation begins
+            const originalPlayAnimation = playAnimation;
+            playAnimation = function() {
+                originalPlayAnimation.call(this);
+                updateProgress();
+            };
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            resetAnimation();
+            createProgressIndicator();
+            
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize for responsive design
+        window.addEventListener('resize', () => {
+            const items = document.querySelectorAll('.timeline-item');
+            const timelineLine = document.querySelector('.timeline-line');
+            
+            if (window.innerWidth <= 768) {
+                // Mobile layout - vertical stack
+                items.forEach(item => {
+                    const content = item.querySelector('.timeline-content');
+                    const marker = item.querySelector('.timeline-marker');
+                    
+                    // Reset positioning for mobile
+                    item.style.flexDirection = 'column';
+                    item.style.alignItems = 'flex-start';
+                    item.style.paddingLeft = '40px';
+                    
+                    if (content) {
+                        content.style.flex = 'none';
+                        content.style.paddingLeft = '0';
+                        content.style.paddingRight = '0';
+                        content.style.textAlign = 'left';
+                        content.style.width = '100%';
+                    }
+                    
+                    if (marker) {
+                        marker.style.left = '15px';
+                        marker.style.transform = 'translateX(0)';
+                    }
+                });
+                
+                timelineLine.style.left = '15px';
+                timelineLine.style.transform = 'translateX(0)';
+                
+            } else {
+                // Desktop layout - restore original positioning
+                items.forEach(item => {
+                    const content = item.querySelector('.timeline-content');
+                    const marker = item.querySelector('.timeline-marker');
+                    const isLeft = item.classList.contains('left');
+                    
+                    item.style.flexDirection = 'row';
+                    item.style.alignItems = 'center';
+                    item.style.paddingLeft = '0';
+                    
+                    if (content) {
+                        content.style.flex = '1';
+                        content.style.textAlign = isLeft ? 'right' : 'left';
+                        content.style.paddingLeft = isLeft ? '0' : '60px';
+                        content.style.paddingRight = isLeft ? '60px' : '0';
+                        content.style.width = 'auto';
+                    }
+                    
+                    if (marker) {
+                        marker.style.left = '50%';
+                        marker.style.transform = 'translateX(-50%)';
+                    }
+                });
+                
+                timelineLine.style.left = '50%';
+                timelineLine.style.transform = 'translateX(-50%)';
+            }
+        });
+    </script>
+</body>
+</html>

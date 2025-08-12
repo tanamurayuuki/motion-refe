@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>円グラフアニメーション - 市場シェア分析</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">市場シェア分析 2024</h2>
+        
+        <div class="chart-area">
+            <div class="pie-chart-container">
+                <svg class="pie-svg" viewBox="0 0 400 400" id="pieChart">
+                    <!-- Pie slices will be added by JavaScript -->
+                </svg>
+                
+                <div class="pie-legend" id="legend">
+                    <!-- Legend items will be added by JavaScript -->
+                </div>
+                
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for pie chart - market share
+        const data = [
+            { label: 'A社', value: 35, color: '#FF6B6B' },
+            { label: 'B社', value: 28, color: '#4ECDC4' },
+            { label: 'C社', value: 22, color: '#45B7D1' },
+            { label: 'D社', value: 10, color: '#96CEB4' },
+            { label: 'その他', value: 5, color: '#FECA57' }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart settings
+        const centerX = 200;
+        const centerY = 200;
+        const radius = 120;
+        const total = data.reduce((sum, d) => sum + d.value, 0);
+
+        // Calculate angles for each slice
+        let currentAngle = -90; // Start from top
+        const slices = data.map(d => {
+            const startAngle = currentAngle;
+            const endAngle = currentAngle + (d.value / total) * 360;
+            currentAngle = endAngle;
+            
+            return {
+                ...d,
+                startAngle,
+                endAngle,
+                percentage: ((d.value / total) * 100).toFixed(1)
+            };
+        });
+
+        function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+            const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+            return {
+                x: centerX + (radius * Math.cos(angleInRadians)),
+                y: centerY + (radius * Math.sin(angleInRadians))
+            };
+        }
+
+        function describeArc(x, y, radius, startAngle, endAngle) {
+            const start = polarToCartesian(x, y, radius, endAngle);
+            const end = polarToCartesian(x, y, radius, startAngle);
+            const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+            
+            return [
+                "M", x, y,
+                "L", start.x, start.y,
+                "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y,
+                "Z"
+            ].join(" ");
+        }
+
+        function initChart() {
+            const svg = document.getElementById('pieChart');
+            const legend = document.getElementById('legend');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            legend.innerHTML = '';
+            
+            // Add center circle for donut effect (optional)
+            const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            centerCircle.setAttribute('cx', centerX);
+            centerCircle.setAttribute('cy', centerY);
+            centerCircle.setAttribute('r', '40');
+            centerCircle.setAttribute('fill', 'white');
+            centerCircle.setAttribute('stroke', '#e0e0e0');
+            centerCircle.setAttribute('stroke-width', '2');
+            svg.appendChild(centerCircle);
+
+            // Add title in center
+            const centerText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            centerText.setAttribute('x', centerX);
+            centerText.setAttribute('y', centerY - 5);
+            centerText.setAttribute('text-anchor', 'middle');
+            centerText.setAttribute('class', 'label-text');
+            centerText.setAttribute('font-size', '14');
+            centerText.setAttribute('font-weight', '600');
+            centerText.textContent = '市場シェア';
+            svg.appendChild(centerText);
+
+            const centerSubText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            centerSubText.setAttribute('x', centerX);
+            centerSubText.setAttribute('y', centerY + 10);
+            centerSubText.setAttribute('text-anchor', 'middle');
+            centerSubText.setAttribute('class', 'value-text');
+            centerSubText.setAttribute('font-size', '12');
+            centerSubText.textContent = '100%';
+            svg.appendChild(centerSubText);
+            
+            // Add pie slices (initially hidden)
+            slices.forEach((d, i) => {
+                addPieSlice(svg, d, i);
+            });
+            
+            // Add legend
+            addLegend(legend);
+        }
+
+        function addPieSlice(svg, d, index) {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', describeArc(centerX, centerY, radius, d.startAngle, d.endAngle));
+            path.setAttribute('fill', d.color);
+            path.setAttribute('class', 'pie-slice');
+            path.setAttribute('opacity', '0');
+            path.setAttribute('stroke', 'white');
+            path.setAttribute('stroke-width', '2');
+            
+            // Add hover events
+            path.addEventListener('mouseenter', (e) => showTooltip(e, d));
+            path.addEventListener('mouseleave', hideTooltip);
+            
+            svg.appendChild(path);
+
+            // Add percentage label
+            const labelAngle = (d.startAngle + d.endAngle) / 2;
+            const labelRadius = radius * 0.7;
+            const labelPos = polarToCartesian(centerX, centerY, labelRadius, labelAngle);
+            
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', labelPos.x);
+            text.setAttribute('y', labelPos.y);
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('dominant-baseline', 'middle');
+            text.setAttribute('class', 'value-text');
+            text.setAttribute('fill', 'white');
+            text.setAttribute('font-weight', '600');
+            text.setAttribute('font-size', '14');
+            text.setAttribute('opacity', '0');
+            text.textContent = d.percentage + '%';
+            
+            svg.appendChild(text);
+        }
+
+        function addLegend(legend) {
+            slices.forEach((d, i) => {
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.style.animationDelay = `${i * 0.1}s`;
+                
+                item.innerHTML = `
+                    <div class="legend-color" style="background-color: ${d.color}"></div>
+                    <span class="legend-text">${d.label}</span>
+                    <span class="legend-value">${d.percentage}%</span>
+                `;
+                
+                legend.appendChild(item);
+            });
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            currentStep = 0;
+            animateSlice();
+        }
+
+        function animateSlice() {
+            if (currentStep >= slices.length || !isPlaying) {
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+                return;
+            }
+            
+            const svg = document.getElementById('pieChart');
+            const sliceElements = svg.querySelectorAll('.pie-slice');
+            const textElements = svg.querySelectorAll('.value-text');
+            
+            const slice = sliceElements[currentStep];
+            const text = textElements[currentStep + 2]; // +2 to skip center texts
+            const sliceData = slices[currentStep];
+            
+            // Animate slice appearance with arc drawing effect
+            let startTime = null;
+            const duration = 1000 / animationSpeed;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Ease-out function
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                // Calculate current end angle
+                const currentEndAngle = sliceData.startAngle + 
+                    (sliceData.endAngle - sliceData.startAngle) * easeProgress;
+                
+                // Update path
+                const newPath = describeArc(centerX, centerY, radius, 
+                    sliceData.startAngle, currentEndAngle);
+                slice.setAttribute('d', newPath);
+                slice.setAttribute('opacity', '0.9');
+                
+                // Animate text
+                if (progress > 0.7) {
+                    const textProgress = (progress - 0.7) / 0.3;
+                    text.setAttribute('opacity', textProgress);
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Move to next slice
+                    currentStep++;
+                    animationTimeout = setTimeout(() => {
+                        animateSlice();
+                    }, 200 / animationSpeed);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('pieChart');
+            const sliceElements = svg.querySelectorAll('.pie-slice');
+            const textElements = svg.querySelectorAll('.value-text');
+            
+            // Reset slices
+            sliceElements.forEach((slice, i) => {
+                slice.setAttribute('opacity', '0');
+                // Reset to minimal path
+                const startPath = describeArc(centerX, centerY, radius, 
+                    slices[i].startAngle, slices[i].startAngle + 0.1);
+                slice.setAttribute('d', startPath);
+            });
+            
+            // Reset texts (skip first two which are center texts)
+            for (let i = 2; i < textElements.length; i++) {
+                textElements[i].setAttribute('opacity', '0');
+            }
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, data) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${data.label}</strong><br>
+                シェア: ${data.value}%<br>
+                (${data.percentage}%)
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+</body>
+</html>

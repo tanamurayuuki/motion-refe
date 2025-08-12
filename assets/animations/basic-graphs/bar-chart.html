@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>棒グラフアニメーション - 年度別売上推移</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">年度別売上推移</h2>
+        
+        <div class="chart-area">
+            <div class="bar-chart-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="barChart">
+                    <!-- Grid lines will be added by JavaScript -->
+                    <!-- Axes will be added by JavaScript -->
+                    <!-- Bars will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for bar chart
+        const data = [
+            { year: '2020', sales: 120, color: '#FF6B6B' },
+            { year: '2021', sales: 150, color: '#4ECDC4' },
+            { year: '2022', sales: 180, color: '#45B7D1' },
+            { year: '2023', sales: 220, color: '#96CEB4' },
+            { year: '2024', sales: 280, color: '#FECA57' }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const margin = { top: 40, right: 60, bottom: 60, left: 60 };
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        // Scales
+        const xScale = (index) => (width / data.length) * index + (width / data.length) * 0.1;
+        const barWidth = (width / data.length) * 0.8;
+        const maxValue = Math.max(...data.map(d => d.sales));
+        const yScale = (value) => height - (value / maxValue) * height;
+
+        function initChart() {
+            const svg = document.getElementById('barChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add background grid
+            addGrid(svg);
+            
+            // Add axes
+            addAxes(svg);
+            
+            // Add bars (initially hidden)
+            data.forEach((d, i) => {
+                addBar(svg, d, i);
+            });
+        }
+
+        function addGrid(svg) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'grid');
+            
+            // Horizontal grid lines
+            for (let i = 0; i <= 5; i++) {
+                const y = margin.top + (height / 5) * i;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', margin.left);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', margin.left + width);
+                line.setAttribute('y2', y);
+                line.setAttribute('class', 'grid-line');
+                g.appendChild(line);
+            }
+            
+            svg.appendChild(g);
+        }
+
+        function addAxes(svg) {
+            // X axis
+            const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            xAxis.setAttribute('x1', margin.left);
+            xAxis.setAttribute('y1', margin.top + height);
+            xAxis.setAttribute('x2', margin.left + width);
+            xAxis.setAttribute('y2', margin.top + height);
+            xAxis.setAttribute('class', 'axis');
+            svg.appendChild(xAxis);
+
+            // Y axis
+            const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            yAxis.setAttribute('x1', margin.left);
+            yAxis.setAttribute('y1', margin.top);
+            yAxis.setAttribute('x2', margin.left);
+            yAxis.setAttribute('y2', margin.top + height);
+            yAxis.setAttribute('class', 'axis');
+            svg.appendChild(yAxis);
+
+            // X axis labels
+            data.forEach((d, i) => {
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', margin.left + xScale(i) + barWidth / 2);
+                text.setAttribute('y', margin.top + height + 25);
+                text.setAttribute('class', 'label-text');
+                text.textContent = d.year;
+                svg.appendChild(text);
+            });
+
+            // Y axis labels
+            for (let i = 0; i <= 5; i++) {
+                const value = (maxValue / 5) * (5 - i);
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', margin.left - 15);
+                text.setAttribute('y', margin.top + (height / 5) * i + 5);
+                text.setAttribute('class', 'axis-label');
+                text.setAttribute('text-anchor', 'end');
+                text.textContent = Math.round(value) + '万円';
+                svg.appendChild(text);
+            }
+        }
+
+        function addBar(svg, d, index) {
+            const barHeight = height - yScale(d.sales);
+            
+            // Bar rectangle
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', margin.left + xScale(index));
+            rect.setAttribute('y', margin.top + height); // Start from bottom
+            rect.setAttribute('width', barWidth);
+            rect.setAttribute('height', 0); // Start with 0 height
+            rect.setAttribute('fill', d.color);
+            rect.setAttribute('class', 'bar');
+            rect.setAttribute('data-value', d.sales);
+            rect.setAttribute('data-year', d.year);
+            rect.setAttribute('opacity', '0.9');
+            
+            // Add hover events
+            rect.addEventListener('mouseenter', (e) => showTooltip(e, d));
+            rect.addEventListener('mouseleave', hideTooltip);
+            
+            svg.appendChild(rect);
+
+            // Value label
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', margin.left + xScale(index) + barWidth / 2);
+            text.setAttribute('y', margin.top + yScale(d.sales) - 10);
+            text.setAttribute('class', 'value-text');
+            text.setAttribute('opacity', '0');
+            text.textContent = d.sales + '万円';
+            
+            svg.appendChild(text);
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateBar(currentStep);
+        }
+
+        function animateBar(index) {
+            if (index >= data.length || !isPlaying) {
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+                return;
+            }
+            
+            const svg = document.getElementById('barChart');
+            const bars = svg.querySelectorAll('.bar');
+            const texts = svg.querySelectorAll('.value-text');
+            
+            const bar = bars[index];
+            const text = texts[index];
+            const targetHeight = height - yScale(data[index].sales);
+            
+            // Animate bar height
+            let startTime = null;
+            const duration = 1000 / animationSpeed;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Ease-out cubic function
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                const currentHeight = targetHeight * easeProgress;
+                bar.setAttribute('height', currentHeight);
+                bar.setAttribute('y', margin.top + height - currentHeight);
+                
+                // Animate value text
+                const currentValue = Math.round(data[index].sales * easeProgress);
+                text.textContent = currentValue + '万円';
+                text.setAttribute('opacity', easeProgress);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Move to next bar after delay
+                    currentStep = index + 1;
+                    animationTimeout = setTimeout(() => {
+                        animateBar(currentStep);
+                    }, 200 / animationSpeed);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('barChart');
+            const bars = svg.querySelectorAll('.bar');
+            const texts = svg.querySelectorAll('.value-text');
+            
+            bars.forEach(bar => {
+                bar.setAttribute('height', '0');
+                bar.setAttribute('y', margin.top + height);
+            });
+            
+            texts.forEach(text => {
+                text.setAttribute('opacity', '0');
+                text.textContent = '0万円';
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, data) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${data.year}</strong><br>
+                売上: ${data.sales}万円
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+</body>
+</html>

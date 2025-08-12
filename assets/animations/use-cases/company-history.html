@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企業沿革アニメーション - 会社設立50周年記念</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">会社設立50周年記念</h2>
+        
+        <div class="chart-area">
+            <div class="history-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="historyChart">
+                    <!-- Company history timeline will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const historyData = {
+            company: "株式会社イノベーション",
+            milestones: [
+                { year: "1974", event: "会社設立", description: "資本金100万円で創業", revenue: 0.1 },
+                { year: "1980", event: "初の製品発売", description: "革新的な技術製品を発売", revenue: 2.5 },
+                { year: "1990", event: "株式上場", description: "東京証券取引所に上場", revenue: 15.0 },
+                { year: "2000", event: "海外進出", description: "アジア市場に本格参入", revenue: 45.0 },
+                { year: "2010", event: "技術革新", description: "AI技術の開発開始", revenue: 120.0 },
+                { year: "2020", event: "グローバル展開", description: "世界50カ国に展開", revenue: 280.0 },
+                { year: "2024", event: "50周年", description: "創立50周年を迎える", revenue: 350.0 }
+            ]
+        };
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+
+        function initChart() {
+            const svg = document.getElementById('historyChart');
+            svg.innerHTML = '';
+            
+            // Background
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('width', '800');
+            bg.setAttribute('height', '400');
+            bg.setAttribute('fill', '#f8f9fa');
+            svg.appendChild(bg);
+            
+            addCompanyHeader(svg);
+            addTimeline(svg);
+            addRevenueChart(svg);
+        }
+
+        function addCompanyHeader(svg) {
+            // Header background
+            const headerBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            headerBg.setAttribute('x', '0');
+            headerBg.setAttribute('y', '0');
+            headerBg.setAttribute('width', '800');
+            headerBg.setAttribute('height', '60');
+            headerBg.setAttribute('fill', '#2c3e50');
+            headerBg.setAttribute('opacity', '0');
+            headerBg.setAttribute('class', 'header-bg');
+            svg.appendChild(headerBg);
+            
+            // Company name
+            const companyName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            companyName.setAttribute('x', '400');
+            companyName.setAttribute('y', '25');
+            companyName.setAttribute('text-anchor', 'middle');
+            companyName.setAttribute('class', 'company-name');
+            companyName.setAttribute('opacity', '0');
+            companyName.textContent = historyData.company;
+            svg.appendChild(companyName);
+            
+            // Anniversary text
+            const anniversary = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            anniversary.setAttribute('x', '400');
+            anniversary.setAttribute('y', '45');
+            anniversary.setAttribute('text-anchor', 'middle');
+            anniversary.setAttribute('class', 'anniversary-text');
+            anniversary.setAttribute('opacity', '0');
+            anniversary.textContent = '創立50周年記念 1974-2024';
+            svg.appendChild(anniversary);
+        }
+
+        function addTimeline(svg) {
+            const timelineY = 100;
+            const startX = 50;
+            const endX = 750;
+            const timelineWidth = endX - startX;
+            
+            // Timeline base line
+            const timelineLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            timelineLine.setAttribute('x1', startX);
+            timelineLine.setAttribute('y1', timelineY);
+            timelineLine.setAttribute('x2', endX);
+            timelineLine.setAttribute('y2', timelineY);
+            timelineLine.setAttribute('stroke', '#34495e');
+            timelineLine.setAttribute('stroke-width', '3');
+            timelineLine.setAttribute('opacity', '0');
+            timelineLine.setAttribute('class', 'timeline-line');
+            svg.appendChild(timelineLine);
+            
+            historyData.milestones.forEach((milestone, index) => {
+                const x = startX + (index * timelineWidth / (historyData.milestones.length - 1));
+                
+                // Milestone point
+                const point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                point.setAttribute('cx', x);
+                point.setAttribute('cy', timelineY);
+                point.setAttribute('r', '8');
+                point.setAttribute('fill', '#e74c3c');
+                point.setAttribute('stroke', 'white');
+                point.setAttribute('stroke-width', '3');
+                point.setAttribute('opacity', '0');
+                point.setAttribute('class', 'milestone-point');
+                svg.appendChild(point);
+                
+                // Year label
+                const yearLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                yearLabel.setAttribute('x', x);
+                yearLabel.setAttribute('y', timelineY - 15);
+                yearLabel.setAttribute('text-anchor', 'middle');
+                yearLabel.setAttribute('class', 'year-label');
+                yearLabel.setAttribute('opacity', '0');
+                yearLabel.textContent = milestone.year;
+                svg.appendChild(yearLabel);
+                
+                // Event text
+                const eventText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                eventText.setAttribute('x', x);
+                eventText.setAttribute('y', timelineY + 25);
+                eventText.setAttribute('text-anchor', 'middle');
+                eventText.setAttribute('class', 'event-text');
+                eventText.setAttribute('opacity', '0');
+                eventText.textContent = milestone.event;
+                svg.appendChild(eventText);
+                
+                // Description
+                const description = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                description.setAttribute('x', x);
+                description.setAttribute('y', timelineY + 40);
+                description.setAttribute('text-anchor', 'middle');
+                description.setAttribute('class', 'description-text');
+                description.setAttribute('opacity', '0');
+                description.textContent = milestone.description;
+                svg.appendChild(description);
+                
+                // Add hover events
+                point.addEventListener('mouseenter', (e) => showTooltip(e, milestone));
+                point.addEventListener('mouseleave', hideTooltip);
+            });
+        }
+
+        function addRevenueChart(svg) {
+            const chartY = 180;
+            const chartHeight = 150;
+            const chartWidth = 700;
+            const chartX = 50;
+            
+            // Chart background
+            const chartBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            chartBg.setAttribute('x', chartX);
+            chartBg.setAttribute('y', chartY);
+            chartBg.setAttribute('width', chartWidth);
+            chartBg.setAttribute('height', chartHeight);
+            chartBg.setAttribute('fill', 'white');
+            chartBg.setAttribute('stroke', '#bdc3c7');
+            chartBg.setAttribute('rx', '5');
+            chartBg.setAttribute('opacity', '0');
+            chartBg.setAttribute('class', 'chart-bg');
+            svg.appendChild(chartBg);
+            
+            // Chart title
+            const chartTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            chartTitle.setAttribute('x', chartX + 20);
+            chartTitle.setAttribute('y', chartY + 25);
+            chartTitle.setAttribute('class', 'chart-title');
+            chartTitle.setAttribute('opacity', '0');
+            chartTitle.textContent = '売上推移（億円）';
+            svg.appendChild(chartTitle);
+            
+            // Revenue line
+            let pathData = '';
+            const maxRevenue = Math.max(...historyData.milestones.map(m => m.revenue));
+            
+            historyData.milestones.forEach((milestone, index) => {
+                const x = chartX + 50 + (index * (chartWidth - 100) / (historyData.milestones.length - 1));
+                const y = chartY + chartHeight - 30 - (milestone.revenue / maxRevenue) * (chartHeight - 60);
+                
+                if (index === 0) {
+                    pathData += `M ${x} ${y}`;
+                } else {
+                    pathData += ` L ${x} ${y}`;
+                }
+                
+                // Revenue point
+                const point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                point.setAttribute('cx', x);
+                point.setAttribute('cy', y);
+                point.setAttribute('r', '5');
+                point.setAttribute('fill', '#3498db');
+                point.setAttribute('stroke', 'white');
+                point.setAttribute('stroke-width', '2');
+                point.setAttribute('opacity', '0');
+                point.setAttribute('class', 'revenue-point');
+                svg.appendChild(point);
+                
+                // Revenue value
+                const revenueValue = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                revenueValue.setAttribute('x', x);
+                revenueValue.setAttribute('y', y - 10);
+                revenueValue.setAttribute('text-anchor', 'middle');
+                revenueValue.setAttribute('class', 'revenue-value');
+                revenueValue.setAttribute('opacity', '0');
+                revenueValue.textContent = milestone.revenue + '億円';
+                svg.appendChild(revenueValue);
+            });
+            
+            const revenueLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            revenueLine.setAttribute('d', pathData);
+            revenueLine.setAttribute('fill', 'none');
+            revenueLine.setAttribute('stroke', '#3498db');
+            revenueLine.setAttribute('stroke-width', '3');
+            revenueLine.setAttribute('opacity', '0');
+            revenueLine.setAttribute('class', 'revenue-line');
+            svg.appendChild(revenueLine);
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateHistory();
+        }
+
+        function animateHistory() {
+            const svg = document.getElementById('historyChart');
+            
+            // Animate header
+            setTimeout(() => {
+                svg.querySelector('.header-bg').setAttribute('opacity', '1');
+                svg.querySelector('.company-name').setAttribute('opacity', '1');
+                svg.querySelector('.anniversary-text').setAttribute('opacity', '1');
+            }, 0);
+            
+            // Animate timeline
+            setTimeout(() => {
+                svg.querySelector('.timeline-line').setAttribute('opacity', '1');
+                
+                const points = svg.querySelectorAll('.milestone-point');
+                const years = svg.querySelectorAll('.year-label');
+                const events = svg.querySelectorAll('.event-text');
+                const descriptions = svg.querySelectorAll('.description-text');
+                
+                points.forEach((point, index) => {
+                    setTimeout(() => {
+                        point.setAttribute('opacity', '1');
+                        years[index].setAttribute('opacity', '1');
+                        events[index].setAttribute('opacity', '1');
+                        descriptions[index].setAttribute('opacity', '1');
+                    }, index * 300);
+                });
+            }, 1000);
+            
+            // Animate revenue chart
+            setTimeout(() => {
+                svg.querySelector('.chart-bg').setAttribute('opacity', '1');
+                svg.querySelector('.chart-title').setAttribute('opacity', '1');
+                
+                setTimeout(() => {
+                    svg.querySelector('.revenue-line').setAttribute('opacity', '1');
+                    
+                    const revenuePoints = svg.querySelectorAll('.revenue-point');
+                    const revenueValues = svg.querySelectorAll('.revenue-value');
+                    
+                    revenuePoints.forEach((point, index) => {
+                        setTimeout(() => {
+                            point.setAttribute('opacity', '1');
+                            revenueValues[index].setAttribute('opacity', '1');
+                        }, index * 200);
+                    });
+                }, 500);
+                
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+            }, 3500);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            const svg = document.getElementById('historyChart');
+            const allElements = svg.querySelectorAll('*:not(rect:first-child)');
+            
+            allElements.forEach(element => {
+                element.setAttribute('opacity', '0');
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, milestone) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${milestone.year} - ${milestone.event}</strong><br>
+                ${milestone.description}<br>
+                売上: ${milestone.revenue}億円
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        window.addEventListener('load', () => {
+            initChart();
+            setTimeout(() => playAnimation(), 1000);
+        });
+    </script>
+
+    <style>
+        .company-name {
+            fill: white;
+            font-size: 18px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .anniversary-text {
+            fill: #ecf0f1;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .year-label {
+            fill: #2c3e50;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .event-text {
+            fill: #e74c3c;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .description-text {
+            fill: #7f8c8d;
+            font-size: 9px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .chart-title {
+            fill: #2c3e50;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .revenue-value {
+            fill: #3498db;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .milestone-point {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .milestone-point:hover {
+            r: 10;
+        }
+        
+        .revenue-point {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .revenue-point:hover {
+            r: 7;
+        }
+    </style>
+</body>
+</html>

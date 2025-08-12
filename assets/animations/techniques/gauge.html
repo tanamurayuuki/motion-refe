@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ゲージメーターアニメーション - パフォーマンス指標</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">システムパフォーマンス ダッシュボード</h2>
+        
+        <div class="chart-area">
+            <div class="gauges-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; padding: 40px;">
+                
+                <!-- CPU Usage Gauge -->
+                <div class="gauge-card" style="background: rgba(255, 255, 255, 0.9); border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);">
+                    <h3 style="margin-bottom: 20px; color: #2c3e50; font-size: 18px;">CPU使用率</h3>
+                    <svg width="200" height="120" viewBox="0 0 200 120" class="gauge-svg">
+                        <!-- Background arc -->
+                        <path d="M 30 90 A 70 70 0 0 1 170 90" stroke="#e0e0e0" stroke-width="15" fill="none" stroke-linecap="round"/>
+                        <!-- Progress arc -->
+                        <path id="cpu-arc" d="M 30 90 A 70 70 0 0 1 170 90" stroke="#FF6B6B" stroke-width="15" fill="none" stroke-linecap="round" 
+                              stroke-dasharray="220" stroke-dashoffset="220" style="transition: stroke-dashoffset 1s ease-in-out;"/>
+                        <!-- Center value -->
+                        <text x="100" y="80" text-anchor="middle" class="gauge-value" style="font-size: 24px; font-weight: 700; fill: #2c3e50;">0%</text>
+                        <text x="100" y="100" text-anchor="middle" style="font-size: 12px; fill: #666;">CPU</text>
+                    </svg>
+                    <div class="gauge-status" style="margin-top: 15px; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px;">待機中</div>
+                </div>
+
+                <!-- Memory Usage Gauge -->
+                <div class="gauge-card" style="background: rgba(255, 255, 255, 0.9); border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);">
+                    <h3 style="margin-bottom: 20px; color: #2c3e50; font-size: 18px;">メモリ使用率</h3>
+                    <svg width="200" height="120" viewBox="0 0 200 120" class="gauge-svg">
+                        <path d="M 30 90 A 70 70 0 0 1 170 90" stroke="#e0e0e0" stroke-width="15" fill="none" stroke-linecap="round"/>
+                        <path id="memory-arc" d="M 30 90 A 70 70 0 0 1 170 90" stroke="#4ECDC4" stroke-width="15" fill="none" stroke-linecap="round"
+                              stroke-dasharray="220" stroke-dashoffset="220" style="transition: stroke-dashoffset 1s ease-in-out;"/>
+                        <text x="100" y="80" text-anchor="middle" class="gauge-value" style="font-size: 24px; font-weight: 700; fill: #2c3e50;">0%</text>
+                        <text x="100" y="100" text-anchor="middle" style="font-size: 12px; fill: #666;">Memory</text>
+                    </svg>
+                    <div class="gauge-status" style="margin-top: 15px; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px;">待機中</div>
+                </div>
+
+                <!-- Disk Usage Gauge -->
+                <div class="gauge-card" style="background: rgba(255, 255, 255, 0.9); border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);">
+                    <h3 style="margin-bottom: 20px; color: #2c3e50; font-size: 18px;">ディスク使用率</h3>
+                    <svg width="200" height="120" viewBox="0 0 200 120" class="gauge-svg">
+                        <path d="M 30 90 A 70 70 0 0 1 170 90" stroke="#e0e0e0" stroke-width="15" fill="none" stroke-linecap="round"/>
+                        <path id="disk-arc" d="M 30 90 A 70 70 0 0 1 170 90" stroke="#45B7D1" stroke-width="15" fill="none" stroke-linecap="round"
+                              stroke-dasharray="220" stroke-dashoffset="220" style="transition: stroke-dashoffset 1s ease-in-out;"/>
+                        <text x="100" y="80" text-anchor="middle" class="gauge-value" style="font-size: 24px; font-weight: 700; fill: #2c3e50;">0%</text>
+                        <text x="100" y="100" text-anchor="middle" style="font-size: 12px; fill: #666;">Disk</text>
+                    </svg>
+                    <div class="gauge-status" style="margin-top: 15px; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px;">待機中</div>
+                </div>
+
+                <!-- Network Usage Gauge -->
+                <div class="gauge-card" style="background: rgba(255, 255, 255, 0.9); border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);">
+                    <h3 style="margin-bottom: 20px; color: #2c3e50; font-size: 18px;">ネットワーク使用率</h3>
+                    <svg width="200" height="120" viewBox="0 0 200 120" class="gauge-svg">
+                        <path d="M 30 90 A 70 70 0 0 1 170 90" stroke="#e0e0e0" stroke-width="15" fill="none" stroke-linecap="round"/>
+                        <path id="network-arc" d="M 30 90 A 70 70 0 0 1 170 90" stroke="#96CEB4" stroke-width="15" fill="none" stroke-linecap="round"
+                              stroke-dasharray="220" stroke-dashoffset="220" style="transition: stroke-dashoffset 1s ease-in-out;"/>
+                        <text x="100" y="80" text-anchor="middle" class="gauge-value" style="font-size: 24px; font-weight: 700; fill: #2c3e50;">0%</text>
+                        <text x="100" y="100" text-anchor="middle" style="font-size: 12px; fill: #666;">Network</text>
+                    </svg>
+                    <div class="gauge-status" style="margin-top: 15px; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px;">待機中</div>
+                </div>
+
+                <!-- Performance Score Gauge (Full Circle) -->
+                <div class="gauge-card" style="background: rgba(255, 255, 255, 0.9); border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); grid-column: span 2;">
+                    <h3 style="margin-bottom: 20px; color: #2c3e50; font-size: 18px;">総合パフォーマンススコア</h3>
+                    <svg width="180" height="180" viewBox="0 0 180 180" class="gauge-svg">
+                        <!-- Background circle -->
+                        <circle cx="90" cy="90" r="70" stroke="#e0e0e0" stroke-width="12" fill="none"/>
+                        <!-- Progress circle -->
+                        <circle id="score-circle" cx="90" cy="90" r="70" stroke="url(#scoreGradient)" stroke-width="12" fill="none" 
+                                stroke-dasharray="440" stroke-dashoffset="440" style="transition: stroke-dashoffset 2s ease-in-out; transform: rotate(-90deg); transform-origin: center;"
+                                stroke-linecap="round"/>
+                        <!-- Gradient definition -->
+                        <defs>
+                            <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#FECA57;stop-opacity:1" />
+                                <stop offset="50%" style="stop-color:#FF9FF3;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#5F27CD;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <!-- Center value -->
+                        <text x="90" y="85" text-anchor="middle" class="gauge-value" style="font-size: 32px; font-weight: 700; fill: #2c3e50;">0</text>
+                        <text x="90" y="105" text-anchor="middle" style="font-size: 14px; fill: #666;">/ 100</text>
+                    </svg>
+                    <div class="gauge-status" style="margin-top: 15px; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px;">評価中...</div>
+                </div>
+
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Gauge data
+        const gauges = [
+            { id: 'cpu', arcId: 'cpu-arc', target: 78, maxDash: 220, color: '#FF6B6B' },
+            { id: 'memory', arcId: 'memory-arc', target: 65, maxDash: 220, color: '#4ECDC4' },
+            { id: 'disk', arcId: 'disk-arc', target: 43, maxDash: 220, color: '#45B7D1' },
+            { id: 'network', arcId: 'network-arc', target: 29, maxDash: 220, color: '#96CEB4' },
+            { id: 'score', arcId: 'score-circle', target: 85, maxDash: 440, color: '#5F27CD', isCircle: true }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        function getStatusInfo(value, isScore = false) {
+            if (isScore) {
+                if (value >= 90) return { status: '優秀', bgColor: '#2ecc71', textColor: 'white' };
+                if (value >= 75) return { status: '良好', bgColor: '#f39c12', textColor: 'white' };
+                if (value >= 60) return { status: '普通', bgColor: '#e67e22', textColor: 'white' };
+                return { status: '要改善', bgColor: '#e74c3c', textColor: 'white' };
+            } else {
+                if (value >= 80) return { status: '高負荷', bgColor: '#e74c3c', textColor: 'white' };
+                if (value >= 60) return { status: '中負荷', bgColor: '#f39c12', textColor: 'white' };
+                if (value >= 30) return { status: '低負荷', bgColor: '#2ecc71', textColor: 'white' };
+                return { status: '待機中', bgColor: '#95a5a6', textColor: 'white' };
+            }
+        }
+
+        function animateGauge(gauge, delay = 0) {
+            const arc = document.getElementById(gauge.arcId);
+            const card = arc.closest('.gauge-card');
+            const valueText = card.querySelector('.gauge-value');
+            const statusDiv = card.querySelector('.gauge-status');
+            
+            setTimeout(() => {
+                // Animate the arc
+                const targetOffset = gauge.maxDash - (gauge.maxDash * (gauge.target / 100));
+                arc.style.strokeDashoffset = targetOffset;
+                
+                // Animate the value counting
+                let startTime = Date.now();
+                const duration = 1500 / animationSpeed;
+                
+                function updateValue() {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    // Ease-out function
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+                    
+                    const currentValue = Math.round(gauge.target * easeProgress);
+                    
+                    if (gauge.isCircle) {
+                        valueText.textContent = currentValue;
+                    } else {
+                        valueText.textContent = currentValue + '%';
+                    }
+                    
+                    // Update status
+                    const statusInfo = getStatusInfo(currentValue, gauge.isCircle);
+                    statusDiv.textContent = statusInfo.status;
+                    statusDiv.style.backgroundColor = statusInfo.bgColor;
+                    statusDiv.style.color = statusInfo.textColor;
+                    
+                    if (progress < 1 && isPlaying) {
+                        requestAnimationFrame(updateValue);
+                    } else if (progress >= 1) {
+                        // Add pulse effect on completion
+                        card.style.animation = 'pulse 0.6s ease-in-out';
+                        setTimeout(() => {
+                            card.style.animation = '';
+                        }, 600);
+                    }
+                }
+                
+                updateValue();
+            }, delay);
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            // Add entrance animation to cards
+            const cards = document.querySelectorAll('.gauge-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px) scale(0.95)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0) scale(1)';
+                }, index * 100 / animationSpeed);
+            });
+            
+            // Start gauge animations with staggered delays
+            gauges.forEach((gauge, index) => {
+                const delay = (index * 300 + 500) / animationSpeed;
+                animateGauge(gauge, delay);
+            });
+            
+            // End animation
+            const totalDuration = (gauges.length * 300 + 2500) / animationSpeed;
+            animationTimeout = setTimeout(() => {
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+            }, totalDuration);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            
+            // Reset all gauges
+            gauges.forEach(gauge => {
+                const arc = document.getElementById(gauge.arcId);
+                const card = arc.closest('.gauge-card');
+                const valueText = card.querySelector('.gauge-value');
+                const statusDiv = card.querySelector('.gauge-status');
+                
+                arc.style.strokeDashoffset = gauge.maxDash;
+                
+                if (gauge.isCircle) {
+                    valueText.textContent = '0';
+                } else {
+                    valueText.textContent = '0%';
+                }
+                
+                statusDiv.textContent = gauge.isCircle ? '評価中...' : '待機中';
+                statusDiv.style.backgroundColor = '#95a5a6';
+                statusDiv.style.color = 'white';
+            });
+            
+            // Reset card animations
+            const cards = document.querySelectorAll('.gauge-card');
+            cards.forEach(card => {
+                card.style.transition = 'none';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0) scale(1)';
+                card.style.animation = '';
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        // Add interactive hover effects
+        const cards = document.querySelectorAll('.gauge-card');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                if (!isPlaying) {
+                    card.style.transform = 'translateY(-3px) scale(1.02)';
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.boxShadow = '0 15px 40px rgba(0, 0, 0, 0.15)';
+                }
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                if (!isPlaying) {
+                    card.style.transform = 'translateY(0) scale(1)';
+                    card.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.1)';
+                }
+            });
+        });
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            resetAnimation();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const container = document.querySelector('.gauges-container');
+            
+            if (window.innerWidth <= 768) {
+                container.style.gridTemplateColumns = '1fr';
+                container.style.gap = '20px';
+                container.style.padding = '20px';
+                
+                // Adjust the performance score gauge to span 1 column on mobile
+                const scoreCard = container.querySelector('.gauge-card:last-child');
+                if (scoreCard) {
+                    scoreCard.style.gridColumn = 'span 1';
+                }
+            } else if (window.innerWidth <= 1024) {
+                container.style.gridTemplateColumns = 'repeat(2, 1fr)';
+                container.style.gap = '25px';
+                container.style.padding = '30px';
+            } else {
+                container.style.gridTemplateColumns = 'repeat(auto-fit, minmax(250px, 1fr))';
+                container.style.gap = '30px';
+                container.style.padding = '40px';
+            }
+        });
+    </script>
+</body>
+</html>

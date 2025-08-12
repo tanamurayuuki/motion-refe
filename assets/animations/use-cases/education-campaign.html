@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教育キャンペーンアニメーション - 環境保護意識向上</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">環境保護意識向上キャンペーン</h2>
+        
+        <div class="chart-area">
+            <div class="education-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="educationChart">
+                    <!-- Education campaign components will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const campaignData = {
+            title: "地球を守ろう",
+            subtitle: "一人一人の行動が未来を変える",
+            impactData: [
+                { action: "リサイクル", reduction: 65, icon: "♻️" },
+                { action: "節電", reduction: 45, icon: "💡" },
+                { action: "公共交通", reduction: 55, icon: "🚌" },
+                { action: "節水", reduction: 35, icon: "💧" }
+            ],
+            trendData: [
+                { year: "2020", co2: 100 },
+                { year: "2021", co2: 95 },
+                { year: "2022", co2: 88 },
+                { year: "2023", co2: 82 },
+                { year: "2024", co2: 75 }
+            ]
+        };
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+
+        function initChart() {
+            const svg = document.getElementById('educationChart');
+            svg.innerHTML = '';
+            
+            // Background
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('width', '800');
+            bg.setAttribute('height', '400');
+            bg.setAttribute('fill', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)');
+            bg.setAttribute('opacity', '0.1');
+            svg.appendChild(bg);
+            
+            addCampaignHeader(svg);
+            addImpactChart(svg);
+            addTrendChart(svg);
+            addCallToAction(svg);
+        }
+
+        function addCampaignHeader(svg) {
+            // Title
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', '400');
+            title.setAttribute('y', '40');
+            title.setAttribute('text-anchor', 'middle');
+            title.setAttribute('class', 'campaign-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = campaignData.title;
+            svg.appendChild(title);
+            
+            // Subtitle
+            const subtitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            subtitle.setAttribute('x', '400');
+            subtitle.setAttribute('y', '60');
+            subtitle.setAttribute('text-anchor', 'middle');
+            subtitle.setAttribute('class', 'campaign-subtitle');
+            subtitle.setAttribute('opacity', '0');
+            subtitle.textContent = campaignData.subtitle;
+            svg.appendChild(subtitle);
+        }
+
+        function addImpactChart(svg) {
+            campaignData.impactData.forEach((item, index) => {
+                const x = 50 + index * 180;
+                const y = 100;
+                
+                // Card background
+                const card = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                card.setAttribute('x', x);
+                card.setAttribute('y', y);
+                card.setAttribute('width', '160');
+                card.setAttribute('height', '100');
+                card.setAttribute('fill', 'white');
+                card.setAttribute('stroke', '#e0e0e0');
+                card.setAttribute('rx', '10');
+                card.setAttribute('opacity', '0');
+                card.setAttribute('class', 'impact-card');
+                svg.appendChild(card);
+                
+                // Icon
+                const icon = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                icon.setAttribute('x', x + 80);
+                icon.setAttribute('y', y + 35);
+                icon.setAttribute('text-anchor', 'middle');
+                icon.setAttribute('class', 'impact-icon');
+                icon.setAttribute('opacity', '0');
+                icon.textContent = item.icon;
+                svg.appendChild(icon);
+                
+                // Action name
+                const name = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                name.setAttribute('x', x + 80);
+                name.setAttribute('y', y + 55);
+                name.setAttribute('text-anchor', 'middle');
+                name.setAttribute('class', 'action-name');
+                name.setAttribute('opacity', '0');
+                name.textContent = item.action;
+                svg.appendChild(name);
+                
+                // Reduction value
+                const reduction = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                reduction.setAttribute('x', x + 80);
+                reduction.setAttribute('y', y + 80);
+                reduction.setAttribute('text-anchor', 'middle');
+                reduction.setAttribute('class', 'reduction-value');
+                reduction.setAttribute('opacity', '0');
+                reduction.textContent = '0%';
+                reduction.setAttribute('data-target', item.reduction);
+                svg.appendChild(reduction);
+            });
+        }
+
+        function addTrendChart(svg) {
+            const chartX = 50;
+            const chartY = 220;
+            const chartWidth = 700;
+            const chartHeight = 120;
+            
+            // Chart background
+            const chartBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            chartBg.setAttribute('x', chartX);
+            chartBg.setAttribute('y', chartY);
+            chartBg.setAttribute('width', chartWidth);
+            chartBg.setAttribute('height', chartHeight);
+            chartBg.setAttribute('fill', 'white');
+            chartBg.setAttribute('stroke', '#e0e0e0');
+            chartBg.setAttribute('rx', '10');
+            chartBg.setAttribute('opacity', '0');
+            chartBg.setAttribute('class', 'trend-chart-bg');
+            svg.appendChild(chartBg);
+            
+            // Chart title
+            const chartTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            chartTitle.setAttribute('x', chartX + 20);
+            chartTitle.setAttribute('y', chartY + 25);
+            chartTitle.setAttribute('class', 'chart-section-title');
+            chartTitle.setAttribute('opacity', '0');
+            chartTitle.textContent = 'CO2排出量推移（基準年比）';
+            svg.appendChild(chartTitle);
+            
+            // Line chart
+            let pathData = '';
+            const maxValue = Math.max(...campaignData.trendData.map(d => d.co2));
+            
+            campaignData.trendData.forEach((data, index) => {
+                const x = chartX + 50 + (index * (chartWidth - 100) / (campaignData.trendData.length - 1));
+                const y = chartY + 40 + (100 - data.co2) * 0.6;
+                
+                if (index === 0) {
+                    pathData += `M ${x} ${y}`;
+                } else {
+                    pathData += ` L ${x} ${y}`;
+                }
+                
+                // Data point
+                const point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                point.setAttribute('cx', x);
+                point.setAttribute('cy', y);
+                point.setAttribute('r', '4');
+                point.setAttribute('fill', '#27ae60');
+                point.setAttribute('stroke', 'white');
+                point.setAttribute('stroke-width', '2');
+                point.setAttribute('opacity', '0');
+                point.setAttribute('class', 'trend-point');
+                svg.appendChild(point);
+                
+                // Year label
+                const yearLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                yearLabel.setAttribute('x', x);
+                yearLabel.setAttribute('y', chartY + chartHeight - 10);
+                yearLabel.setAttribute('text-anchor', 'middle');
+                yearLabel.setAttribute('class', 'year-label');
+                yearLabel.setAttribute('opacity', '0');
+                yearLabel.textContent = data.year;
+                svg.appendChild(yearLabel);
+            });
+            
+            const trendLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            trendLine.setAttribute('d', pathData);
+            trendLine.setAttribute('fill', 'none');
+            trendLine.setAttribute('stroke', '#27ae60');
+            trendLine.setAttribute('stroke-width', '3');
+            trendLine.setAttribute('opacity', '0');
+            trendLine.setAttribute('class', 'trend-line');
+            svg.appendChild(trendLine);
+        }
+
+        function addCallToAction(svg) {
+            const ctaY = 360;
+            
+            // CTA background
+            const ctaBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            ctaBg.setAttribute('x', '200');
+            ctaBg.setAttribute('y', ctaY - 10);
+            ctaBg.setAttribute('width', '400');
+            ctaBg.setAttribute('height', '40');
+            ctaBg.setAttribute('fill', '#27ae60');
+            ctaBg.setAttribute('rx', '20');
+            ctaBg.setAttribute('opacity', '0');
+            ctaBg.setAttribute('class', 'cta-bg');
+            svg.appendChild(ctaBg);
+            
+            // CTA text
+            const ctaText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            ctaText.setAttribute('x', '400');
+            ctaText.setAttribute('y', ctaY + 15);
+            ctaText.setAttribute('text-anchor', 'middle');
+            ctaText.setAttribute('class', 'cta-text');
+            ctaText.setAttribute('opacity', '0');
+            ctaText.textContent = '今すぐ行動を始めよう！';
+            svg.appendChild(ctaText);
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateCampaign();
+        }
+
+        function animateCampaign() {
+            const svg = document.getElementById('educationChart');
+            
+            // Animate header
+            setTimeout(() => {
+                svg.querySelector('.campaign-title').setAttribute('opacity', '1');
+            }, 0);
+            
+            setTimeout(() => {
+                svg.querySelector('.campaign-subtitle').setAttribute('opacity', '1');
+            }, 300);
+            
+            // Animate impact cards
+            setTimeout(() => {
+                const cards = svg.querySelectorAll('.impact-card');
+                const icons = svg.querySelectorAll('.impact-icon');
+                const names = svg.querySelectorAll('.action-name');
+                const reductions = svg.querySelectorAll('.reduction-value');
+                
+                cards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.setAttribute('opacity', '1');
+                        icons[index].setAttribute('opacity', '1');
+                        names[index].setAttribute('opacity', '1');
+                        
+                        // Animate reduction values
+                        const target = parseInt(reductions[index].getAttribute('data-target'));
+                        let current = 0;
+                        const increment = target / 30;
+                        
+                        const counter = setInterval(() => {
+                            current += increment;
+                            if (current >= target) {
+                                current = target;
+                                clearInterval(counter);
+                            }
+                            reductions[index].textContent = Math.round(current) + '%削減';
+                            reductions[index].setAttribute('opacity', '1');
+                        }, 50);
+                    }, index * 200);
+                });
+            }, 800);
+            
+            // Animate trend chart
+            setTimeout(() => {
+                svg.querySelector('.trend-chart-bg').setAttribute('opacity', '1');
+                svg.querySelector('.chart-section-title').setAttribute('opacity', '1');
+                
+                setTimeout(() => {
+                    svg.querySelector('.trend-line').setAttribute('opacity', '1');
+                    
+                    const points = svg.querySelectorAll('.trend-point');
+                    const labels = svg.querySelectorAll('.year-label');
+                    
+                    points.forEach((point, index) => {
+                        setTimeout(() => {
+                            point.setAttribute('opacity', '1');
+                            labels[index].setAttribute('opacity', '1');
+                        }, index * 200);
+                    });
+                }, 500);
+            }, 2500);
+            
+            // Animate call to action
+            setTimeout(() => {
+                svg.querySelector('.cta-bg').setAttribute('opacity', '1');
+                svg.querySelector('.cta-text').setAttribute('opacity', '1');
+                
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+            }, 4000);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            const svg = document.getElementById('educationChart');
+            const allElements = svg.querySelectorAll('*:not(rect:first-child)');
+            
+            allElements.forEach(element => {
+                element.setAttribute('opacity', '0');
+                if (element.classList.contains('reduction-value')) {
+                    element.textContent = '0%';
+                }
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        window.addEventListener('load', () => {
+            initChart();
+            setTimeout(() => playAnimation(), 1000);
+        });
+    </script>
+
+    <style>
+        .campaign-title {
+            fill: #2c3e50;
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .campaign-subtitle {
+            fill: #7f8c8d;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .impact-icon {
+            font-size: 24px;
+        }
+        
+        .action-name {
+            fill: #2c3e50;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .reduction-value {
+            fill: #27ae60;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .chart-section-title {
+            fill: #2c3e50;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .year-label {
+            fill: #7f8c8d;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .cta-text {
+            fill: white;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+    </style>
+</body>
+</html>

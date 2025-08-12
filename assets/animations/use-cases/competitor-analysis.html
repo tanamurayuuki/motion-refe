@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>競合他社比較アニメーション - 業界ポジション分析</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">業界ポジション分析</h2>
+        
+        <div class="chart-area">
+            <div class="competitor-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="competitorChart">
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const competitorData = {
+            companies: [
+                { name: '自社', marketShare: 28, innovation: 8.5, customerSat: 4.2, revenue: 450, color: '#e74c3c' },
+                { name: 'A社', marketShare: 35, innovation: 7.2, customerSat: 4.0, revenue: 620, color: '#3498db' },
+                { name: 'B社', marketShare: 22, innovation: 6.8, customerSat: 3.8, revenue: 380, color: '#f39c12' },
+                { name: 'C社', marketShare: 15, innovation: 7.8, customerSat: 4.1, revenue: 280, color: '#27ae60' }
+            ],
+            metrics: [
+                { metric: 'ブランド認知度', our: 72, industry: 68, best: 85 },
+                { metric: '製品品質', our: 88, industry: 75, best: 90 },
+                { metric: 'カスタマーサービス', our: 76, industry: 70, best: 82 },
+                { metric: '価格競争力', our: 65, industry: 72, best: 88 },
+                { metric: '技術革新', our: 82, industry: 74, best: 85 }
+            ],
+            swot: {
+                strengths: ['高品質製品', '強力な技術チーム', '顧客満足度'],
+                weaknesses: ['市場シェア', '価格競争力', 'ブランド認知'],
+                opportunities: ['新興市場', 'デジタル化', 'パートナーシップ'],
+                threats: ['価格競争', '新規参入', '技術革新']
+            }
+        };
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+
+        function initChart() {
+            const svg = document.getElementById('competitorChart');
+            svg.innerHTML = '';
+            
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('width', '800');
+            bg.setAttribute('height', '400');
+            bg.setAttribute('fill', '#fafbfc');
+            svg.appendChild(bg);
+            
+            addCompetitorMatrix(svg);
+            addMetricComparison(svg);
+            addSWOTAnalysis(svg);
+        }
+
+        function addCompetitorMatrix(svg) {
+            const matrixX = 50;
+            const matrixY = 50;
+            const matrixWidth = 300;
+            const matrixHeight = 200;
+
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('x', matrixX);
+            bg.setAttribute('y', matrixY);
+            bg.setAttribute('width', matrixWidth);
+            bg.setAttribute('height', matrixHeight);
+            bg.setAttribute('fill', 'white');
+            bg.setAttribute('stroke', '#e1e8ed');
+            bg.setAttribute('rx', '8');
+            bg.setAttribute('opacity', '0');
+            bg.setAttribute('class', 'matrix-bg');
+            svg.appendChild(bg);
+
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', matrixX + 150);
+            title.setAttribute('y', matrixY + 25);
+            title.setAttribute('text-anchor', 'middle');
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = '競合ポジションマップ';
+            svg.appendChild(title);
+
+            // Axes
+            const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            xAxis.setAttribute('x1', matrixX + 30);
+            xAxis.setAttribute('y1', matrixY + 180);
+            xAxis.setAttribute('x2', matrixX + 270);
+            xAxis.setAttribute('y2', matrixY + 180);
+            xAxis.setAttribute('stroke', '#95a5a6');
+            xAxis.setAttribute('opacity', '0');
+            xAxis.setAttribute('class', 'axis-line');
+            svg.appendChild(xAxis);
+
+            const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            yAxis.setAttribute('x1', matrixX + 30);
+            yAxis.setAttribute('y1', matrixY + 40);
+            yAxis.setAttribute('x2', matrixX + 30);
+            yAxis.setAttribute('y2', matrixY + 180);
+            yAxis.setAttribute('stroke', '#95a5a6');
+            yAxis.setAttribute('opacity', '0');
+            yAxis.setAttribute('class', 'axis-line');
+            svg.appendChild(yAxis);
+
+            // Axis labels
+            const xLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            xLabel.setAttribute('x', matrixX + 150);
+            xLabel.setAttribute('y', matrixX + 210);
+            xLabel.setAttribute('text-anchor', 'middle');
+            xLabel.setAttribute('class', 'axis-label');
+            xLabel.setAttribute('opacity', '0');
+            xLabel.textContent = '市場シェア';
+            svg.appendChild(xLabel);
+
+            const yLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            yLabel.setAttribute('x', matrixX + 15);
+            yLabel.setAttribute('y', matrixY + 110);
+            yLabel.setAttribute('text-anchor', 'middle');
+            yLabel.setAttribute('class', 'axis-label');
+            yLabel.setAttribute('transform', `rotate(-90, ${matrixX + 15}, ${matrixY + 110})`);
+            yLabel.setAttribute('opacity', '0');
+            yLabel.textContent = '革新性';
+            svg.appendChild(yLabel);
+
+            // Company positions
+            competitorData.companies.forEach((company, index) => {
+                const x = matrixX + 30 + (company.marketShare / 40) * 240;
+                const y = matrixY + 180 - (company.innovation / 10) * 140;
+
+                const bubble = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                bubble.setAttribute('cx', x);
+                bubble.setAttribute('cy', y);
+                bubble.setAttribute('r', Math.sqrt(company.revenue) / 8);
+                bubble.setAttribute('fill', company.color);
+                bubble.setAttribute('opacity', '0');
+                bubble.setAttribute('class', 'company-bubble');
+                bubble.addEventListener('mouseenter', (e) => showCompanyTooltip(e, company));
+                bubble.addEventListener('mouseleave', hideTooltip);
+                svg.appendChild(bubble);
+
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', x);
+                label.setAttribute('y', y - Math.sqrt(company.revenue) / 8 - 10);
+                label.setAttribute('text-anchor', 'middle');
+                label.setAttribute('class', 'company-label');
+                label.setAttribute('opacity', '0');
+                label.textContent = company.name;
+                svg.appendChild(label);
+            });
+        }
+
+        function addMetricComparison(svg) {
+            const compX = 370;
+            const compY = 50;
+            const compWidth = 380;
+            const compHeight = 200;
+
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('x', compX);
+            bg.setAttribute('y', compY);
+            bg.setAttribute('width', compWidth);
+            bg.setAttribute('height', compHeight);
+            bg.setAttribute('fill', 'white');
+            bg.setAttribute('stroke', '#e1e8ed');
+            bg.setAttribute('rx', '8');
+            bg.setAttribute('opacity', '0');
+            bg.setAttribute('class', 'comp-bg');
+            svg.appendChild(bg);
+
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', compX + 20);
+            title.setAttribute('y', compY + 25);
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = 'パフォーマンス比較';
+            svg.appendChild(title);
+
+            competitorData.metrics.forEach((metric, index) => {
+                const y = compY + 50 + index * 30;
+
+                const metricName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                metricName.setAttribute('x', compX + 20);
+                metricName.setAttribute('y', y);
+                metricName.setAttribute('class', 'metric-name');
+                metricName.setAttribute('opacity', '0');
+                metricName.textContent = metric.metric;
+                svg.appendChild(metricName);
+
+                // Our bar
+                const ourBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                ourBar.setAttribute('x', compX + 150);
+                ourBar.setAttribute('y', y - 8);
+                ourBar.setAttribute('width', '0');
+                ourBar.setAttribute('height', '8');
+                ourBar.setAttribute('fill', '#e74c3c');
+                ourBar.setAttribute('opacity', '0');
+                ourBar.setAttribute('class', 'our-bar');
+                ourBar.setAttribute('data-target-width', metric.our * 1.5);
+                svg.appendChild(ourBar);
+
+                // Industry average bar
+                const industryBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                industryBar.setAttribute('x', compX + 150);
+                industryBar.setAttribute('y', y + 2);
+                industryBar.setAttribute('width', '0');
+                industryBar.setAttribute('height', '6');
+                industryBar.setAttribute('fill', '#95a5a6');
+                industryBar.setAttribute('opacity', '0');
+                industryBar.setAttribute('class', 'industry-bar');
+                industryBar.setAttribute('data-target-width', metric.industry * 1.5);
+                svg.appendChild(industryBar);
+
+                // Best in class bar
+                const bestBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                bestBar.setAttribute('x', compX + 150);
+                bestBar.setAttribute('y', y + 10);
+                bestBar.setAttribute('width', '0');
+                bestBar.setAttribute('height', '4');
+                bestBar.setAttribute('fill', '#27ae60');
+                bestBar.setAttribute('opacity', '0');
+                bestBar.setAttribute('class', 'best-bar');
+                bestBar.setAttribute('data-target-width', metric.best * 1.5);
+                svg.appendChild(bestBar);
+
+                // Values
+                const ourValue = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                ourValue.setAttribute('x', compX + 300);
+                ourValue.setAttribute('y', y - 2);
+                ourValue.setAttribute('class', 'metric-value our');
+                ourValue.setAttribute('opacity', '0');
+                ourValue.textContent = metric.our;
+                svg.appendChild(ourValue);
+            });
+
+            // Legend
+            const legendItems = [
+                { name: '自社', color: '#e74c3c' },
+                { name: '業界平均', color: '#95a5a6' },
+                { name: '業界最高', color: '#27ae60' }
+            ];
+
+            legendItems.forEach((item, index) => {
+                const legendX = compX + 320 + index * 60;
+                
+                const legendRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                legendRect.setAttribute('x', legendX);
+                legendRect.setAttribute('y', compY + 180);
+                legendRect.setAttribute('width', '12');
+                legendRect.setAttribute('height', '8');
+                legendRect.setAttribute('fill', item.color);
+                legendRect.setAttribute('opacity', '0');
+                legendRect.setAttribute('class', 'legend-item');
+                svg.appendChild(legendRect);
+
+                const legendText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                legendText.setAttribute('x', legendX + 16);
+                legendText.setAttribute('y', compY + 187);
+                legendText.setAttribute('class', 'legend-text');
+                legendText.setAttribute('opacity', '0');
+                legendText.textContent = item.name;
+                svg.appendChild(legendText);
+            });
+        }
+
+        function addSWOTAnalysis(svg) {
+            const swotX = 50;
+            const swotY = 270;
+            const quadrantSize = 170;
+
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', swotX + quadrantSize);
+            title.setAttribute('y', swotY - 10);
+            title.setAttribute('text-anchor', 'middle');
+            title.setAttribute('class', 'section-title');
+            title.setAttribute('opacity', '0');
+            title.textContent = 'SWOT分析';
+            svg.appendChild(title);
+
+            const swotQuadrants = [
+                { title: 'Strengths (強み)', items: competitorData.swot.strengths, color: '#27ae60', x: 0, y: 0 },
+                { title: 'Weaknesses (弱み)', items: competitorData.swot.weaknesses, color: '#e74c3c', x: 1, y: 0 },
+                { title: 'Opportunities (機会)', items: competitorData.swot.opportunities, color: '#3498db', x: 0, y: 1 },
+                { title: 'Threats (脅威)', items: competitorData.swot.threats, color: '#f39c12', x: 1, y: 1 }
+            ];
+
+            swotQuadrants.forEach((quadrant, index) => {
+                const qX = swotX + quadrant.x * (quadrantSize + 10);
+                const qY = swotY + quadrant.y * 60;
+
+                const quadrantBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                quadrantBg.setAttribute('x', qX);
+                quadrantBg.setAttribute('y', qY);
+                quadrantBg.setAttribute('width', quadrantSize);
+                quadrantBg.setAttribute('height', '50');
+                quadrantBg.setAttribute('fill', quadrant.color);
+                quadrantBg.setAttribute('opacity', '0');
+                quadrantBg.setAttribute('class', 'swot-bg');
+                svg.appendChild(quadrantBg);
+
+                const quadrantTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                quadrantTitle.setAttribute('x', qX + 10);
+                quadrantTitle.setAttribute('y', qY + 15);
+                quadrantTitle.setAttribute('class', 'swot-title');
+                quadrantTitle.setAttribute('opacity', '0');
+                quadrantTitle.textContent = quadrant.title;
+                svg.appendChild(quadrantTitle);
+
+                quadrant.items.forEach((item, itemIndex) => {
+                    const itemText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    itemText.setAttribute('x', qX + 10);
+                    itemText.setAttribute('y', qY + 30 + itemIndex * 12);
+                    itemText.setAttribute('class', 'swot-item');
+                    itemText.setAttribute('opacity', '0');
+                    itemText.textContent = `• ${item}`;
+                    svg.appendChild(itemText);
+                });
+            });
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateCompetitorAnalysis();
+        }
+
+        function animateCompetitorAnalysis() {
+            const svg = document.getElementById('competitorChart');
+            
+            // Phase 1: Competitor matrix
+            setTimeout(() => {
+                svg.querySelector('.matrix-bg').setAttribute('opacity', '1');
+                svg.querySelectorAll('.section-title')[0].setAttribute('opacity', '1');
+                svg.querySelectorAll('.axis-line').forEach(line => line.setAttribute('opacity', '1'));
+                svg.querySelectorAll('.axis-label').forEach(label => label.setAttribute('opacity', '1'));
+
+                const bubbles = svg.querySelectorAll('.company-bubble');
+                const labels = svg.querySelectorAll('.company-label');
+
+                bubbles.forEach((bubble, index) => {
+                    setTimeout(() => {
+                        bubble.setAttribute('opacity', '0.7');
+                        labels[index].setAttribute('opacity', '1');
+                    }, index * 200);
+                });
+            }, 0);
+
+            // Phase 2: Metric comparison
+            setTimeout(() => {
+                svg.querySelector('.comp-bg').setAttribute('opacity', '1');
+                svg.querySelectorAll('.section-title')[1].setAttribute('opacity', '1');
+
+                const metricNames = svg.querySelectorAll('.metric-name');
+                const ourBars = svg.querySelectorAll('.our-bar');
+                const industryBars = svg.querySelectorAll('.industry-bar');
+                const bestBars = svg.querySelectorAll('.best-bar');
+                const metricValues = svg.querySelectorAll('.metric-value');
+                const legendItems = svg.querySelectorAll('.legend-item, .legend-text');
+
+                metricNames.forEach((name, index) => {
+                    setTimeout(() => {
+                        name.setAttribute('opacity', '1');
+                        metricValues[index].setAttribute('opacity', '1');
+                        
+                        ourBars[index].setAttribute('width', ourBars[index].getAttribute('data-target-width'));
+                        ourBars[index].setAttribute('opacity', '1');
+                        
+                        setTimeout(() => {
+                            industryBars[index].setAttribute('width', industryBars[index].getAttribute('data-target-width'));
+                            industryBars[index].setAttribute('opacity', '0.7');
+                            
+                            setTimeout(() => {
+                                bestBars[index].setAttribute('width', bestBars[index].getAttribute('data-target-width'));
+                                bestBars[index].setAttribute('opacity', '0.5');
+                            }, 100);
+                        }, 200);
+                    }, index * 200);
+                });
+
+                legendItems.forEach(item => item.setAttribute('opacity', '1'));
+            }, 2000);
+
+            // Phase 3: SWOT analysis
+            setTimeout(() => {
+                svg.querySelectorAll('.section-title')[2].setAttribute('opacity', '1');
+
+                const swotBgs = svg.querySelectorAll('.swot-bg');
+                const swotTitles = svg.querySelectorAll('.swot-title');
+                const swotItems = svg.querySelectorAll('.swot-item');
+
+                swotBgs.forEach((bg, index) => {
+                    setTimeout(() => {
+                        bg.setAttribute('opacity', '0.2');
+                        swotTitles[index].setAttribute('opacity', '1');
+                    }, index * 200);
+                });
+
+                swotItems.forEach((item, index) => {
+                    setTimeout(() => {
+                        item.setAttribute('opacity', '1');
+                    }, 800 + index * 100);
+                });
+
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+            }, 3500);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            const svg = document.getElementById('competitorChart');
+            const allElements = svg.querySelectorAll('*:not(rect:first-child)');
+            
+            allElements.forEach(element => {
+                element.setAttribute('opacity', '0');
+                
+                if (element.classList.contains('our-bar') || 
+                    element.classList.contains('industry-bar') || 
+                    element.classList.contains('best-bar')) {
+                    element.setAttribute('width', '0');
+                }
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showCompanyTooltip(event, company) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${company.name}</strong><br>
+                市場シェア: ${company.marketShare}%<br>
+                革新性: ${company.innovation}/10<br>
+                顧客満足度: ${company.customerSat}/5<br>
+                売上: ${company.revenue}億円
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        window.addEventListener('load', () => {
+            initChart();
+            setTimeout(() => playAnimation(), 1000);
+        });
+    </script>
+
+    <style>
+        .section-title {
+            fill: #2c3e50;
+            font-size: 13px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .axis-label {
+            fill: #7f8c8d;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .company-label {
+            fill: #2c3e50;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .company-bubble {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .company-bubble:hover {
+            opacity: 1 !important;
+        }
+        
+        .metric-name {
+            fill: #34495e;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .metric-value {
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .metric-value.our {
+            fill: #e74c3c;
+        }
+        
+        .legend-text {
+            fill: #7f8c8d;
+            font-size: 9px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .swot-title {
+            fill: white;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .swot-item {
+            fill: #2c3e50;
+            font-size: 9px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</body>
+</html>

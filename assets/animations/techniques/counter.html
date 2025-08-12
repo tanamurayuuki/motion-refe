@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カウンターアニメーション - KPI指標表示</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">2024年度 KPI実績</h2>
+        
+        <div class="chart-area">
+            <div class="counters-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; padding: 40px;">
+                
+                <!-- Revenue Counter -->
+                <div class="counter-card" style="background: linear-gradient(135deg, #FF6B6B, #FF8E8E); border-radius: 15px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);">
+                    <div class="counter-icon" style="font-size: 40px; margin-bottom: 15px;">💰</div>
+                    <div class="counter-value counter-text" id="revenue" style="color: white; margin-bottom: 10px;">0</div>
+                    <div class="counter-label" style="color: rgba(255,255,255,0.9); font-size: 16px; font-weight: 600;">売上高</div>
+                    <div class="counter-unit" style="color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 5px;">億円</div>
+                </div>
+
+                <!-- Users Counter -->
+                <div class="counter-card" style="background: linear-gradient(135deg, #4ECDC4, #72E5DD); border-radius: 15px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(78, 205, 196, 0.3);">
+                    <div class="counter-icon" style="font-size: 40px; margin-bottom: 15px;">👥</div>
+                    <div class="counter-value counter-text" id="users" style="color: white; margin-bottom: 10px;">0</div>
+                    <div class="counter-label" style="color: rgba(255,255,255,0.9); font-size: 16px; font-weight: 600;">登録ユーザー数</div>
+                    <div class="counter-unit" style="color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 5px;">万人</div>
+                </div>
+
+                <!-- Growth Rate Counter -->
+                <div class="counter-card" style="background: linear-gradient(135deg, #45B7D1, #96CEB4); border-radius: 15px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(69, 183, 209, 0.3);">
+                    <div class="counter-icon" style="font-size: 40px; margin-bottom: 15px;">📈</div>
+                    <div class="counter-value counter-text" id="growth" style="color: white; margin-bottom: 10px;">0.0</div>
+                    <div class="counter-label" style="color: rgba(255,255,255,0.9); font-size: 16px; font-weight: 600;">成長率</div>
+                    <div class="counter-unit" style="color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 5px;">%</div>
+                </div>
+
+                <!-- Projects Counter -->
+                <div class="counter-card" style="background: linear-gradient(135deg, #FECA57, #FF9FF3); border-radius: 15px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(254, 202, 87, 0.3);">
+                    <div class="counter-icon" style="font-size: 40px; margin-bottom: 15px;">🚀</div>
+                    <div class="counter-value counter-text" id="projects" style="color: white; margin-bottom: 10px;">0</div>
+                    <div class="counter-label" style="color: rgba(255,255,255,0.9); font-size: 16px; font-weight: 600;">完了プロジェクト</div>
+                    <div class="counter-unit" style="color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 5px;">件</div>
+                </div>
+
+                <!-- Satisfaction Counter -->
+                <div class="counter-card" style="background: linear-gradient(135deg, #96CEB4, #54A0FF); border-radius: 15px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(150, 206, 180, 0.3);">
+                    <div class="counter-icon" style="font-size: 40px; margin-bottom: 15px;">⭐</div>
+                    <div class="counter-value counter-text" id="satisfaction" style="color: white; margin-bottom: 10px;">0.0</div>
+                    <div class="counter-label" style="color: rgba(255,255,255,0.9); font-size: 16px; font-weight: 600;">顧客満足度</div>
+                    <div class="counter-unit" style="color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 5px;">/ 5.0</div>
+                </div>
+
+                <!-- Efficiency Counter -->
+                <div class="counter-card" style="background: linear-gradient(135deg, #5F27CD, #FF6B6B); border-radius: 15px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(95, 39, 205, 0.3);">
+                    <div class="counter-icon" style="font-size: 40px; margin-bottom: 15px;">⚡</div>
+                    <div class="counter-value counter-text" id="efficiency" style="color: white; margin-bottom: 10px;">0</div>
+                    <div class="counter-label" style="color: rgba(255,255,255,0.9); font-size: 16px; font-weight: 600;">業務効率改善</div>
+                    <div class="counter-unit" style="color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 5px;">%</div>
+                </div>
+
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Counter data
+        const counters = [
+            { id: 'revenue', target: 248.5, decimals: 1, suffix: '' },
+            { id: 'users', target: 125.8, decimals: 1, suffix: '' },
+            { id: 'growth', target: 23.7, decimals: 1, suffix: '' },
+            { id: 'projects', target: 47, decimals: 0, suffix: '' },
+            { id: 'satisfaction', target: 4.6, decimals: 1, suffix: '' },
+            { id: 'efficiency', target: 85, decimals: 0, suffix: '' }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+        let activeAnimations = [];
+
+        function formatNumber(num, decimals) {
+            if (decimals === 0) {
+                return Math.round(num).toLocaleString('ja-JP');
+            } else {
+                return num.toFixed(decimals);
+            }
+        }
+
+        function animateCounter(counterId, targetValue, decimals, duration, delay = 0) {
+            const element = document.getElementById(counterId);
+            const startTime = Date.now() + delay;
+            
+            function updateCounter() {
+                const now = Date.now();
+                const elapsed = now - startTime;
+                
+                if (elapsed < 0) {
+                    requestAnimationFrame(updateCounter);
+                    return;
+                }
+                
+                if (elapsed >= duration || !isPlaying) {
+                    element.textContent = formatNumber(targetValue, decimals);
+                    return;
+                }
+                
+                // Easing function (ease-out cubic)
+                const progress = elapsed / duration;
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                const currentValue = targetValue * easeProgress;
+                element.textContent = formatNumber(currentValue, decimals);
+                
+                requestAnimationFrame(updateCounter);
+            }
+            
+            updateCounter();
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            // Add entrance animations to cards
+            const cards = document.querySelectorAll('.counter-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px) scale(0.8)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0) scale(1)';
+                    
+                    // Add bounce effect
+                    setTimeout(() => {
+                        card.style.transform = 'translateY(0) scale(1.05)';
+                        setTimeout(() => {
+                            card.style.transform = 'translateY(0) scale(1)';
+                        }, 150);
+                    }, 300);
+                }, index * 150 / animationSpeed);
+            });
+            
+            // Start counter animations
+            const baseDuration = 2000 / animationSpeed;
+            const baseDelay = 800 / animationSpeed;
+            
+            counters.forEach((counter, index) => {
+                const delay = baseDelay + (index * 200 / animationSpeed);
+                animateCounter(counter.id, counter.target, counter.decimals, baseDuration, delay);
+            });
+            
+            // End animation after all counters finish
+            const totalDuration = baseDelay + baseDuration + (counters.length * 200 / animationSpeed);
+            animationTimeout = setTimeout(() => {
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+            }, totalDuration);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            // Reset all counters to 0
+            counters.forEach(counter => {
+                const element = document.getElementById(counter.id);
+                element.textContent = counter.decimals === 0 ? '0' : '0.0';
+            });
+            
+            // Reset card animations
+            const cards = document.querySelectorAll('.counter-card');
+            cards.forEach(card => {
+                card.style.transition = 'none';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0) scale(1)';
+            });
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        // Add particle effect on counter completion
+        function createParticle(element) {
+            const rect = element.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'fixed';
+                particle.style.left = centerX + 'px';
+                particle.style.top = centerY + 'px';
+                particle.style.width = '6px';
+                particle.style.height = '6px';
+                particle.style.background = '#FFD700';
+                particle.style.borderRadius = '50%';
+                particle.style.pointerEvents = 'none';
+                particle.style.zIndex = '1000';
+                
+                const angle = (i / 8) * Math.PI * 2;
+                const distance = 50 + Math.random() * 30;
+                const endX = centerX + Math.cos(angle) * distance;
+                const endY = centerY + Math.sin(angle) * distance;
+                
+                particle.style.transition = 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                
+                document.body.appendChild(particle);
+                
+                setTimeout(() => {
+                    particle.style.left = endX + 'px';
+                    particle.style.top = endY + 'px';
+                    particle.style.opacity = '0';
+                    particle.style.transform = 'scale(0)';
+                }, 10);
+                
+                setTimeout(() => {
+                    document.body.removeChild(particle);
+                }, 1000);
+            }
+        }
+
+        // Add hover effects to counter cards
+        const cards = document.querySelectorAll('.counter-card');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                if (!isPlaying) {
+                    card.style.transform = 'translateY(-5px) scale(1.02)';
+                    card.style.transition = 'all 0.3s ease';
+                }
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                if (!isPlaying) {
+                    card.style.transform = 'translateY(0) scale(1)';
+                }
+            });
+        });
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            resetAnimation();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            // Responsive grid adjustment
+            const container = document.querySelector('.counters-container');
+            const cards = container.querySelectorAll('.counter-card');
+            
+            if (window.innerWidth <= 768) {
+                container.style.gridTemplateColumns = 'repeat(auto-fit, minmax(180px, 1fr))';
+                container.style.gap = '20px';
+                container.style.padding = '20px';
+                
+                cards.forEach(card => {
+                    card.style.padding = '20px';
+                    const counterText = card.querySelector('.counter-text');
+                    if (counterText) {
+                        counterText.style.fontSize = '36px';
+                    }
+                });
+            } else {
+                container.style.gridTemplateColumns = 'repeat(auto-fit, minmax(200px, 1fr))';
+                container.style.gap = '30px';
+                container.style.padding = '40px';
+                
+                cards.forEach(card => {
+                    card.style.padding = '30px';
+                    const counterText = card.querySelector('.counter-text');
+                    if (counterText) {
+                        counterText.style.fontSize = '48px';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

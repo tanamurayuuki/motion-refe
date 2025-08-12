@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シンプルデバッグ - インフォグラフィック学習ツール</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .sidebar {
+            width: 300px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .content {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .category-group {
+            margin-bottom: 20px;
+        }
+        .category-header {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .category-header:hover {
+            background: #0056b3;
+        }
+        .category-header.active {
+            background: #0056b3;
+        }
+        .category-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .category-list.expanded {
+            max-height: 500px;
+        }
+        .category-item {
+            display: block;
+            width: 100%;
+            padding: 8px 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            cursor: pointer;
+            text-align: left;
+            font-size: 14px;
+        }
+        .category-item:hover {
+            background: #e9ecef;
+        }
+        .category-item.active {
+            background: #28a745;
+            color: white;
+        }
+        .content-display {
+            display: none;
+            background: #fff3cd;
+            padding: 20px;
+            border: 2px solid #ffeaa7;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .content-display.show {
+            display: block !important;
+        }
+        .welcome-message {
+            text-align: center;
+            color: #666;
+        }
+        .result-area {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>シンプルデバッグ版</h1>
+    
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h3>カテゴリ</h3>
+            
+            <!-- 基本グラフ -->
+            <div class="category-group">
+                <button class="category-header" data-category="basic-graphs">
+                    <span>基本グラフ</span>
+                    <span class="category-icon">▼</span>
+                </button>
+                <ul class="category-list" id="basic-graphs">
+                    <li><button class="category-item" data-id="001">棒グラフ - 年度別売上推移</button></li>
+                    <li><button class="category-item" data-id="002">折れ線グラフ - 株価変動トレンド</button></li>
+                    <li><button class="category-item" data-id="003">円グラフ - 市場シェア分析</button></li>
+                </ul>
+            </div>
+
+            <!-- 表現テクニック -->
+            <div class="category-group">
+                <button class="category-header" data-category="techniques">
+                    <span>表現テクニック</span>
+                    <span class="category-icon">▼</span>
+                </button>
+                <ul class="category-list" id="techniques">
+                    <li><button class="category-item" data-id="005">カウンター - 数値カウントアップ</button></li>
+                    <li><button class="category-item" data-id="006">ゲージ - 進捗率表示</button></li>
+                    <li><button class="category-item" data-id="007">タイムライン - プロジェクト進捗</button></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content">
+            <div id="welcome-message" class="welcome-message">
+                <h2>左側のカテゴリから項目を選択してください</h2>
+                <p>まずカテゴリヘッダーをクリックしてメニューを開き、その後項目をクリックしてください。</p>
+            </div>
+
+            <div id="content-display" class="content-display">
+                <h2 id="content-title">コンテンツタイトル</h2>
+                <p id="content-description">コンテンツの説明がここに表示されます。</p>
+                <p><strong>カテゴリ:</strong> <span id="content-category"></span></p>
+            </div>
+
+            <div class="result-area" id="debug-result">
+                ここにデバッグ情報が表示されます。
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('=== Debug Simple HTML loaded ===');
+        
+        // テスト用のコンテンツデータ
+        const testData = [
+            {
+                id: "001",
+                category: "基本グラフ",
+                subcategory: "棒グラフ", 
+                title: "年度別売上推移",
+                description: "売上の年度別推移を縦棒グラフで表示。データの増減を視覚的に分かりやすく表現します。",
+                usage: "市場分析、売上報告"
+            },
+            {
+                id: "002",
+                category: "基本グラフ",
+                subcategory: "折れ線グラフ",
+                title: "株価変動トレンド", 
+                description: "株価の時系列変化を折れ線で表示。トレンドや変動パターンを明確に示します。",
+                usage: "金融分析、投資判断"
+            },
+            {
+                id: "003",
+                category: "基本グラフ",
+                subcategory: "円グラフ",
+                title: "市場シェア分析",
+                description: "市場における各社のシェアを円グラフで表示。構成比を直感的に理解できます。",
+                usage: "競合分析、市場調査"
+            },
+            {
+                id: "005",
+                category: "表現テクニック",
+                subcategory: "カウンター",
+                title: "数値カウントアップ",
+                description: "KPI指標を動的にカウントアップ表示。インパクトのある数値プレゼンテーション。",
+                usage: "業績発表、ダッシュボード"
+            },
+            {
+                id: "006", 
+                category: "表現テクニック",
+                subcategory: "ゲージ",
+                title: "進捗率表示",
+                description: "プロジェクトやタスクの進捗を円形ゲージで表示。視覚的な進捗管理。",
+                usage: "プロジェクト管理、業績追跡"
+            },
+            {
+                id: "007",
+                category: "表現テクニック", 
+                subcategory: "タイムライン",
+                title: "プロジェクト進捗",
+                description: "プロジェクトの各フェーズと進捗をタイムライン形式で表示。",
+                usage: "プロジェクト管理、スケジュール表示"
+            }
+        ];
+        
+        function updateDebugResult(message) {
+            const debugResult = document.getElementById('debug-result');
+            const timestamp = new Date().toLocaleTimeString();
+            debugResult.innerHTML += `<br>[${timestamp}] ${message}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded - Debug version');
+            updateDebugResult('DOM読み込み完了');
+            
+            // すべてのクリックイベントを監視
+            document.addEventListener('click', function(e) {
+                console.log('Click event:', e.target);
+                updateDebugResult(`クリック: ${e.target.tagName} (class: ${e.target.className})`);
+                
+                // カテゴリヘッダーのクリック
+                if (e.target.classList.contains('category-header') || e.target.closest('.category-header')) {
+                    const header = e.target.classList.contains('category-header') ? e.target : e.target.closest('.category-header');
+                    console.log('Category header clicked:', header);
+                    updateDebugResult(`カテゴリヘッダークリック: ${header.textContent}`);
+                    
+                    toggleAccordion(header);
+                    return;
+                }
+                
+                // カテゴリアイテムのクリック
+                if (e.target.classList.contains('category-item')) {
+                    console.log('Category item clicked:', e.target.dataset.id);
+                    updateDebugResult(`カテゴリアイテムクリック: ID=${e.target.dataset.id}`);
+                    
+                    const contentId = e.target.dataset.id;
+                    displayContent(contentId);
+                    
+                    // アクティブ状態の更新
+                    document.querySelectorAll('.category-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    e.target.classList.add('active');
+                    return;
+                }
+            });
+            
+            updateDebugResult('イベントリスナー設定完了');
+        });
+        
+        function toggleAccordion(header) {
+            const categoryList = header.nextElementSibling;
+            const icon = header.querySelector('.category-icon');
+            
+            if (!categoryList) {
+                updateDebugResult('エラー: カテゴリリストが見つかりません');
+                return;
+            }
+            
+            const isExpanded = header.classList.contains('active');
+            
+            if (isExpanded) {
+                header.classList.remove('active');
+                categoryList.classList.remove('expanded');
+                if (icon) icon.textContent = '▼';
+                updateDebugResult('アコーディオン閉じる');
+            } else {
+                header.classList.add('active');
+                categoryList.classList.add('expanded');
+                if (icon) icon.textContent = '▲';
+                updateDebugResult('アコーディオン開く');
+            }
+        }
+        
+        function displayContent(contentId) {
+            console.log('Displaying content for ID:', contentId);
+            updateDebugResult(`コンテンツ表示: ID=${contentId}`);
+            
+            const content = testData.find(item => item.id === contentId);
+            if (!content) {
+                updateDebugResult('エラー: コンテンツが見つかりません');
+                return;
+            }
+            
+            updateDebugResult(`コンテンツ見つかりました: ${content.title}`);
+            
+            // ウェルカムメッセージを隠す
+            const welcomeMessage = document.getElementById('welcome-message');
+            const contentDisplay = document.getElementById('content-display');
+            
+            updateDebugResult(`要素確認: welcome=${!!welcomeMessage}, content=${!!contentDisplay}`);
+            
+            if (welcomeMessage) {
+                welcomeMessage.style.display = 'none';
+                updateDebugResult('ウェルカムメッセージを非表示にしました');
+            }
+            
+            if (contentDisplay) {
+                contentDisplay.classList.add('show');
+                updateDebugResult('コンテンツ表示クラス追加完了');
+            }
+            
+            // コンテンツ情報を更新
+            const titleElement = document.getElementById('content-title');
+            const categoryElement = document.getElementById('content-category');
+            const descriptionElement = document.getElementById('content-description');
+            
+            updateDebugResult(`要素確認: title=${!!titleElement}, category=${!!categoryElement}, description=${!!descriptionElement}`);
+            
+            if (titleElement) {
+                titleElement.textContent = content.title;
+                updateDebugResult(`タイトル設定: ${content.title}`);
+            }
+            
+            if (categoryElement) {
+                categoryElement.textContent = content.category + ' > ' + content.subcategory;
+                updateDebugResult(`カテゴリ設定: ${content.category} > ${content.subcategory}`);
+            }
+            
+            if (descriptionElement) {
+                descriptionElement.textContent = content.description;
+                updateDebugResult(`説明設定: ${content.description.substring(0, 50)}...`);
+            }
+            
+            // 最終確認
+            const finalCheck = contentDisplay ? contentDisplay.classList.contains('show') : false;
+            updateDebugResult(`最終確認: コンテンツエリアは表示状態か？ ${finalCheck}`);
+            
+            updateDebugResult(`コンテンツ表示完了: ${content.title}`);
+        }
+        
+        console.log('Debug script setup complete');
+    </script>
+</body>
+</html>
