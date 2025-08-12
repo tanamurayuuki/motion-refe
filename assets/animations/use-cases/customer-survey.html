@@ -186,7 +186,7 @@
                 // Rating stars
                 for (let i = 1; i <= 5; i++) {
                     const star = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    star.setAttribute('x', x + 200 + i * 20);
+                    star.setAttribute('x', x + 180 + i * 18);
                     star.setAttribute('y', y + 5);
                     star.setAttribute('class', i <= category.score ? 'star-filled' : 'star-empty');
                     star.setAttribute('opacity', '0');
@@ -196,7 +196,7 @@
 
                 // Score text
                 const scoreText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                scoreText.setAttribute('x', x + 320);
+                scoreText.setAttribute('x', x + 290);
                 scoreText.setAttribute('y', y + 5);
                 scoreText.setAttribute('class', 'category-score');
                 scoreText.setAttribute('opacity', '0');
@@ -277,9 +277,9 @@
         }
 
         function addImprovementMatrix(svg) {
-            const matrixX = 400;
+            const matrixX = 380;
             const matrixY = 200;
-            const matrixWidth = 350;
+            const matrixWidth = 480;
             const matrixHeight = 180;
 
             const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -304,7 +304,7 @@
 
             // Scatter plot
             surveyData.improvements.forEach((improvement, index) => {
-                const x = matrixX + 50 + (improvement.priority / 10) * 250;
+                const x = matrixX + 50 + (improvement.priority / 10) * 350;
                 const y = matrixY + 150 - (improvement.effort / 10) * 100;
 
                 const point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -329,7 +329,7 @@
             const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             xAxis.setAttribute('x1', matrixX + 50);
             xAxis.setAttribute('y1', matrixY + 150);
-            xAxis.setAttribute('x2', matrixX + 300);
+            xAxis.setAttribute('x2', matrixX + 400);
             xAxis.setAttribute('y2', matrixY + 150);
             xAxis.setAttribute('stroke', '#95a5a6');
             xAxis.setAttribute('opacity', '0');
@@ -348,7 +348,7 @@
 
             // Axis labels
             const xLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            xLabel.setAttribute('x', matrixX + 175);
+            xLabel.setAttribute('x', matrixX + 225);
             xLabel.setAttribute('y', matrixY + 170);
             xLabel.setAttribute('text-anchor', 'middle');
             xLabel.setAttribute('class', 'axis-label');

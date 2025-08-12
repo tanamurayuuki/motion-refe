@@ -128,7 +128,7 @@
             // Axis labels
             const xLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             xLabel.setAttribute('x', matrixX + 150);
-            xLabel.setAttribute('y', matrixX + 210);
+            xLabel.setAttribute('y', matrixY + 210);
             xLabel.setAttribute('text-anchor', 'middle');
             xLabel.setAttribute('class', 'axis-label');
             xLabel.setAttribute('opacity', '0');
@@ -175,7 +175,7 @@
         function addMetricComparison(svg) {
             const compX = 370;
             const compY = 50;
-            const compWidth = 380;
+            const compWidth = 480;
             const compHeight = 200;
 
             const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -263,7 +263,7 @@
             ];
 
             legendItems.forEach((item, index) => {
-                const legendX = compX + 320 + index * 60;
+                const legendX = compX + 280 + index * 50;
                 
                 const legendRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
                 legendRect.setAttribute('x', legendX);

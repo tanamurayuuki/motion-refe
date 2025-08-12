@@ -93,13 +93,13 @@
             ];
 
             summaryItems.forEach((item, index) => {
-                const x = 20 + index * 190;
+                const x = 20 + index * 210;
                 const y = 20;
 
                 const card = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
                 card.setAttribute('x', x);
                 card.setAttribute('y', y);
-                card.setAttribute('width', '170');
+                card.setAttribute('width', '190');
                 card.setAttribute('height', '70');
                 card.setAttribute('fill', 'white');
                 card.setAttribute('stroke', '#e1e8ed');
@@ -203,7 +203,7 @@
         function addDepartmentAnalysis(svg) {
             const deptX = 540;
             const deptY = 110;
-            const deptWidth = 240;
+            const deptWidth = 320;
             const deptHeight = 250;
 
             const deptBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
