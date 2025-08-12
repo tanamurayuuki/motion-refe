@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コードビューアー機能テスト</title>
+    <link rel="stylesheet" href="assets/animations/styles/animations.css">
+    <link rel="stylesheet" href="assets/animations/styles/charts.css">
+    <link rel="stylesheet" href="assets/animations/styles/code-viewer.css">
+    <style>
+        /* テスト用の追加スタイル */
+        .test-chart {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">コードビューアー機能テスト</h2>
+        
+        <div class="chart-area">
+            <div class="test-chart">
+                📊 テストチャート
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" onclick="showMessage()">テスト実行</button>
+            <div class="speed-control">
+                <label for="testSelect">オプション:</label>
+                <select id="testSelect">
+                    <option value="test1">テスト1</option>
+                    <option value="test2">テスト2</option>
+                    <option value="test3">テスト3</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // テスト用のJavaScriptコード
+        const testData = [
+            { name: 'テスト項目1', value: 100 },
+            { name: 'テスト項目2', value: 200 },
+            { name: 'テスト項目3', value: 300 }
+        ];
+
+        function showMessage() {
+            alert('コードビューアーのテストを実行しました！\n\n下の「コードを見る」ボタンを押して、このページのソースコードを確認してください。');
+        }
+
+        function initTest() {
+            console.log('Code Viewer Test initialized');
+            console.log('Test data:', testData);
+        }
+
+        // DOM読み込み完了後にテスト初期化
+        document.addEventListener('DOMContentLoaded', initTest);
+
+        // アニメーション効果のテスト
+        function animateTestChart() {
+            const chart = document.querySelector('.test-chart');
+            chart.style.transform = 'scale(1.1)';
+            chart.style.transition = 'transform 0.3s ease';
+            
+            setTimeout(() => {
+                chart.style.transform = 'scale(1)';
+            }, 300);
+        }
+
+        // イベントリスナー追加
+        document.querySelector('.test-chart').addEventListener('click', animateTestChart);
+    </script>
+
+    <!-- Code Viewer Scripts -->
+    <script src="assets/animations/scripts/prism-setup.js"></script>
+    <script src="assets/animations/scripts/code-viewer.js"></script>
+</body>
+</html>
