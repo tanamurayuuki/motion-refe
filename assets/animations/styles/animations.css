@@ -35,9 +35,9 @@ body {
 }
 
 .chart-area.use-case {
-    min-height: auto;
+    min-height: 550px;
     padding: 5px;
-    align-items: flex-start;
+    align-items: center;
 }
 
 .animation-container::before {

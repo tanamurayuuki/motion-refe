@@ -5,6 +5,7 @@
     width: 100%;
     height: 100%;
     max-width: 800px;
+    min-height: 350px;
     overflow: visible;
 }
 
@@ -19,8 +20,8 @@
 .project-management-container .chart-svg,
 .competitor-analysis-container .chart-svg,
 .roi-analysis-container .chart-svg {
-    max-height: none;
-    height: auto;
+    min-height: 480px;
+    height: 480px;
 }
 
 /* Bar Chart Styles */
