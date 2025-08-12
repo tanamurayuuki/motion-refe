@@ -306,8 +306,8 @@
         function addCompetitorComparison(svg) {
             const compX = 20;
             const compY = 200;
-            const compWidth = 370;
-            const compHeight = 180;
+            const compWidth = 380;
+            const compHeight = 200;
             
             // Comparison background
             const compBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -337,7 +337,7 @@
             const maxBarWidth = 280;
             
             productData.competitorComparison.forEach((item, index) => {
-                const barY = compY + 50 + index * 25;
+                const barY = compY + 50 + index * 30;
                 
                 // Feature label
                 const featureLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -387,7 +387,7 @@
             });
             
             // Legend
-            const legendY = compY + compHeight - 30;
+            const legendY = compY + compHeight - 25;
             
             const ourLegendRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             ourLegendRect.setAttribute('x', compX + 15);
@@ -430,7 +430,7 @@
             const usageX = 420;
             const usageY = 200;
             const usageWidth = 440;
-            const usageHeight = 180;
+            const usageHeight = 200;
             
             // Usage background
             const usageBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
