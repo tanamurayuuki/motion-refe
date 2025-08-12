@@ -28,6 +28,17 @@ body {
     overflow: hidden;
 }
 
+/* 用途・シーン別アニメーション用の最適化されたレイアウト */
+.animation-container.use-case {
+    max-width: 1000px;
+    padding: 20px;
+}
+
+.chart-area.use-case {
+    min-height: 500px;
+    padding: 10px;
+}
+
 .animation-container::before {
     content: '';
     position: absolute;

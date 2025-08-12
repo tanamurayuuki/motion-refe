@@ -9,6 +9,21 @@
     overflow: visible;
 }
 
+/* 用途・シーン別アニメーション用の大きなSVG */
+.business-report-container .chart-svg,
+.product-demo-container .chart-svg,
+.education-container .chart-svg,
+.history-container .chart-svg,
+.market-analysis-container .chart-svg,
+.annual-report-container .chart-svg,
+.survey-container .chart-svg,
+.project-management-container .chart-svg,
+.competitor-analysis-container .chart-svg,
+.roi-analysis-container .chart-svg {
+    max-height: 600px;
+    min-height: 500px;
+}
+
 /* Bar Chart Styles */
 .bar-chart-container {
     position: relative;
