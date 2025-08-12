@@ -38,6 +38,9 @@
     </div>
 
     <script>
+        const width = 900;
+        const height = 450;
+        
         const campaignData = {
             title: "地球を守ろう",
             subtitle: "一人一人の行動が未来を変える",
@@ -65,8 +68,8 @@
             
             // Background
             const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            bg.setAttribute('width', '900');
-            bg.setAttribute('height', '450');
+            bg.setAttribute('width', width);
+            bg.setAttribute('height', height);
             bg.setAttribute('fill', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)');
             bg.setAttribute('opacity', '0.1');
             svg.appendChild(bg);

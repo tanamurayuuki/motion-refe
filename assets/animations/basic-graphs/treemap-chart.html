@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ツリーマップアニメーション - 売上構成分析</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+    <link rel="stylesheet" href="../styles/code-viewer.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">売上構成分析</h2>
+        
+        <div class="chart-area">
+            <div class="treemap-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="treemapChart">
+                    <!-- Treemap rectangles will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample hierarchical data for treemap
+        const data = [
+            { 
+                category: 'Electronics', 
+                value: 450, 
+                color: '#FF6B6B',
+                subcategories: [
+                    { name: 'Smartphones', value: 200, color: '#FF8E8E' },
+                    { name: 'Laptops', value: 150, color: '#FFB3B3' },
+                    { name: 'Tablets', value: 100, color: '#FFD6D6' }
+                ]
+            },
+            { 
+                category: 'Clothing', 
+                value: 320, 
+                color: '#4ECDC4',
+                subcategories: [
+                    { name: 'Mens', value: 150, color: '#6FD4CE' },
+                    { name: 'Womens', value: 120, color: '#90DBD8' },
+                    { name: 'Kids', value: 50, color: '#B1E2E1' }
+                ]
+            },
+            { 
+                category: 'Books', 
+                value: 180, 
+                color: '#45B7D1',
+                subcategories: [
+                    { name: 'Fiction', value: 80, color: '#6BC5D8' },
+                    { name: 'Non-Fiction', value: 60, color: '#91D3DF' },
+                    { name: 'Academic', value: 40, color: '#B7E1E6' }
+                ]
+            },
+            { 
+                category: 'Home & Garden', 
+                value: 150, 
+                color: '#96CEB4',
+                subcategories: [
+                    { name: 'Furniture', value: 80, color: '#A6D6C1' },
+                    { name: 'Decor', value: 45, color: '#B6DECE' },
+                    { name: 'Tools', value: 25, color: '#C6E6DB' }
+                ]
+            },
+            { 
+                category: 'Sports', 
+                value: 100, 
+                color: '#FECA57',
+                subcategories: [
+                    { name: 'Equipment', value: 60, color: '#FED474' },
+                    { name: 'Apparel', value: 40, color: '#FEDE91' }
+                ]
+            }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        // Calculate total value
+        const totalValue = data.reduce((sum, d) => sum + d.value, 0);
+        
+        // Calculate rectangles using simple treemap algorithm
+        let rectangles = [];
+
+        function calculateTreemap() {
+            rectangles = [];
+            let currentX = margin.left;
+            let currentY = margin.top;
+            let remainingWidth = width;
+            let remainingHeight = height;
+            
+            // Sort data by value (descending)
+            const sortedData = [...data].sort((a, b) => b.value - a.value);
+            
+            sortedData.forEach((d, index) => {
+                const proportion = d.value / totalValue;
+                let rectWidth, rectHeight;
+                
+                if (index < sortedData.length - 1) {
+                    // Calculate rectangle dimensions
+                    if (remainingWidth >= remainingHeight) {
+                        rectWidth = remainingWidth * proportion * (totalValue / data.slice(index).reduce((sum, item) => sum + item.value, 0));
+                        rectHeight = remainingHeight;
+                        
+                        if (rectWidth > remainingWidth) rectWidth = remainingWidth;
+                    } else {
+                        rectWidth = remainingWidth;
+                        rectHeight = remainingHeight * proportion * (totalValue / data.slice(index).reduce((sum, item) => sum + item.value, 0));
+                        
+                        if (rectHeight > remainingHeight) rectHeight = remainingHeight;
+                    }
+                } else {
+                    // Last rectangle takes remaining space
+                    rectWidth = remainingWidth;
+                    rectHeight = remainingHeight;
+                }
+                
+                rectangles.push({
+                    ...d,
+                    x: currentX,
+                    y: currentY,
+                    width: rectWidth,
+                    height: rectHeight
+                });
+                
+                // Update position for next rectangle
+                if (remainingWidth >= remainingHeight) {
+                    currentX += rectWidth;
+                    remainingWidth -= rectWidth;
+                } else {
+                    currentY += rectHeight;
+                    remainingHeight -= rectHeight;
+                }
+            });
+        }
+
+        function initChart() {
+            const svg = document.getElementById('treemapChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Calculate treemap layout
+            calculateTreemap();
+            
+            // Add rectangles (initially hidden)
+            rectangles.forEach((d, i) => {
+                addRectangle(svg, d, i);
+            });
+        }
+
+        function addRectangle(svg, d, index) {
+            // Main rectangle
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', d.x);
+            rect.setAttribute('y', d.y);
+            rect.setAttribute('width', 0); // Start with 0 width
+            rect.setAttribute('height', 0); // Start with 0 height
+            rect.setAttribute('fill', d.color);
+            rect.setAttribute('class', 'treemap-rect');
+            rect.setAttribute('data-category', d.category);
+            rect.setAttribute('data-value', d.value);
+            rect.setAttribute('opacity', '0.9');
+            rect.setAttribute('stroke', '#fff');
+            rect.setAttribute('stroke-width', '2');
+            
+            // Add hover events
+            rect.addEventListener('mouseenter', (e) => showTooltip(e, d));
+            rect.addEventListener('mouseleave', hideTooltip);
+            
+            svg.appendChild(rect);
+
+            // Category label
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', d.x + d.width / 2);
+            text.setAttribute('y', d.y + 25);
+            text.setAttribute('class', 'category-text');
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('opacity', '0');
+            text.textContent = d.category;
+            svg.appendChild(text);
+
+            // Value label
+            const valueText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            valueText.setAttribute('x', d.x + d.width / 2);
+            valueText.setAttribute('y', d.y + 45);
+            valueText.setAttribute('class', 'value-text');
+            valueText.setAttribute('text-anchor', 'middle');
+            valueText.setAttribute('opacity', '0');
+            valueText.textContent = d.value + '万円';
+            svg.appendChild(valueText);
+
+            // Percentage label
+            const percentText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            percentText.setAttribute('x', d.x + d.width / 2);
+            percentText.setAttribute('y', d.y + 65);
+            percentText.setAttribute('class', 'percent-text');
+            percentText.setAttribute('text-anchor', 'middle');
+            percentText.setAttribute('opacity', '0');
+            const percentage = ((d.value / totalValue) * 100).toFixed(1);
+            percentText.textContent = percentage + '%';
+            svg.appendChild(percentText);
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateRectangle(currentStep);
+        }
+
+        function animateRectangle(index) {
+            if (index >= rectangles.length || !isPlaying) {
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+                return;
+            }
+            
+            const svg = document.getElementById('treemapChart');
+            const rects = svg.querySelectorAll('.treemap-rect');
+            const categoryTexts = svg.querySelectorAll('.category-text');
+            const valueTexts = svg.querySelectorAll('.value-text');
+            const percentTexts = svg.querySelectorAll('.percent-text');
+            
+            const rect = rects[index];
+            const categoryText = categoryTexts[index];
+            const valueText = valueTexts[index];
+            const percentText = percentTexts[index];
+            const rectData = rectangles[index];
+            
+            let startTime = null;
+            const duration = 1200 / animationSpeed;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Ease-out cubic function
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                // Animate rectangle size from center
+                const currentWidth = rectData.width * easeProgress;
+                const currentHeight = rectData.height * easeProgress;
+                const offsetX = (rectData.width - currentWidth) / 2;
+                const offsetY = (rectData.height - currentHeight) / 2;
+                
+                rect.setAttribute('width', currentWidth);
+                rect.setAttribute('height', currentHeight);
+                rect.setAttribute('x', rectData.x + offsetX);
+                rect.setAttribute('y', rectData.y + offsetY);
+                
+                // Animate text opacity
+                const textOpacity = Math.max(0, (easeProgress - 0.3) / 0.7);
+                categoryText.setAttribute('opacity', textOpacity);
+                valueText.setAttribute('opacity', textOpacity);
+                percentText.setAttribute('opacity', textOpacity * 0.8);
+                
+                // Update text positions
+                categoryText.setAttribute('x', rectData.x + currentWidth / 2);
+                categoryText.setAttribute('y', rectData.y + 25 + offsetY);
+                valueText.setAttribute('x', rectData.x + currentWidth / 2);
+                valueText.setAttribute('y', rectData.y + 45 + offsetY);
+                percentText.setAttribute('x', rectData.x + currentWidth / 2);
+                percentText.setAttribute('y', rectData.y + 65 + offsetY);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Move to next rectangle after delay
+                    currentStep = index + 1;
+                    animationTimeout = setTimeout(() => {
+                        animateRectangle(currentStep);
+                    }, 300 / animationSpeed);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('treemapChart');
+            const rects = svg.querySelectorAll('.treemap-rect');
+            const categoryTexts = svg.querySelectorAll('.category-text');
+            const valueTexts = svg.querySelectorAll('.value-text');
+            const percentTexts = svg.querySelectorAll('.percent-text');
+            
+            rects.forEach((rect, index) => {
+                const rectData = rectangles[index];
+                rect.setAttribute('width', '0');
+                rect.setAttribute('height', '0');
+                rect.setAttribute('x', rectData.x + rectData.width / 2);
+                rect.setAttribute('y', rectData.y + rectData.height / 2);
+            });
+            
+            categoryTexts.forEach(text => text.setAttribute('opacity', '0'));
+            valueTexts.forEach(text => text.setAttribute('opacity', '0'));
+            percentTexts.forEach(text => text.setAttribute('opacity', '0'));
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, data) {
+            const tooltip = document.getElementById('tooltip');
+            const percentage = ((data.value / totalValue) * 100).toFixed(1);
+            const subcategoryList = data.subcategories.map(sub => 
+                `• ${sub.name}: ${sub.value}万円`
+            ).join('<br>');
+            
+            tooltip.innerHTML = `
+                <strong>${data.category}</strong><br>
+                売上: ${data.value}万円<br>
+                構成比: ${percentage}%<br>
+                <hr style="margin: 8px 0; border: none; border-top: 1px solid #eee;">
+                <small>内訳:</small><br>
+                <small>${subcategoryList}</small>
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <!-- Code Viewer Scripts -->
+    <script src="../scripts/prism-setup.js"></script>
+    <script src="../scripts/code-viewer.js"></script>
+</body>
+</html>

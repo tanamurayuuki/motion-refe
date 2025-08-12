@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ドーナツチャートアニメーション - 市場シェア分析</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+    <link rel="stylesheet" href="../styles/code-viewer.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">市場シェア分析</h2>
+        
+        <div class="chart-area">
+            <div class="donut-chart-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="donutChart">
+                    <!-- Donut chart segments will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+                <div class="chart-legend" id="legend"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for donut chart
+        const data = [
+            { category: 'Product A', value: 35, color: '#FF6B6B' },
+            { category: 'Product B', value: 25, color: '#4ECDC4' },
+            { category: 'Product C', value: 20, color: '#45B7D1' },
+            { category: 'Product D', value: 15, color: '#96CEB4' },
+            { category: 'Others', value: 5, color: '#FECA57' }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const svgWidth = 800;
+        const svgHeight = 400;
+        const centerX = svgWidth / 2 - 100; // Offset for legend
+        const centerY = svgHeight / 2;
+        const outerRadius = 120;
+        const innerRadius = 60;
+
+        // Calculate total value and angles
+        const totalValue = data.reduce((sum, d) => sum + d.value, 0);
+        let cumulativeAngle = 0;
+        data.forEach(d => {
+            d.startAngle = cumulativeAngle;
+            d.endAngle = cumulativeAngle + (d.value / totalValue) * 2 * Math.PI;
+            cumulativeAngle = d.endAngle;
+        });
+
+        function initChart() {
+            const svg = document.getElementById('donutChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add center text
+            addCenterText(svg);
+            
+            // Add segments (initially hidden)
+            data.forEach((d, i) => {
+                addSegment(svg, d, i);
+            });
+
+            // Add legend
+            addLegend();
+        }
+
+        function addCenterText(svg) {
+            // Total value text
+            const totalText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            totalText.setAttribute('x', centerX);
+            totalText.setAttribute('y', centerY - 10);
+            totalText.setAttribute('class', 'center-text total-text');
+            totalText.setAttribute('text-anchor', 'middle');
+            totalText.textContent = '合計';
+            svg.appendChild(totalText);
+
+            const valueText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            valueText.setAttribute('x', centerX);
+            valueText.setAttribute('y', centerY + 15);
+            valueText.setAttribute('class', 'center-text value-text');
+            valueText.setAttribute('text-anchor', 'middle');
+            valueText.setAttribute('id', 'centerValue');
+            valueText.textContent = '0%';
+            svg.appendChild(valueText);
+        }
+
+        function addSegment(svg, d, index) {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            
+            // Calculate path for donut segment
+            const pathData = getPathData(d.startAngle, d.startAngle); // Start with 0 sweep
+            
+            path.setAttribute('d', pathData);
+            path.setAttribute('fill', d.color);
+            path.setAttribute('class', 'donut-segment');
+            path.setAttribute('data-index', index);
+            path.setAttribute('opacity', '0.9');
+            path.setAttribute('stroke', '#fff');
+            path.setAttribute('stroke-width', '2');
+            
+            // Add hover events
+            path.addEventListener('mouseenter', (e) => showTooltip(e, d));
+            path.addEventListener('mouseleave', hideTooltip);
+            
+            svg.appendChild(path);
+        }
+
+        function getPathData(startAngle, endAngle) {
+            const x1 = centerX + outerRadius * Math.cos(startAngle);
+            const y1 = centerY + outerRadius * Math.sin(startAngle);
+            const x2 = centerX + outerRadius * Math.cos(endAngle);
+            const y2 = centerY + outerRadius * Math.sin(endAngle);
+            
+            const x3 = centerX + innerRadius * Math.cos(endAngle);
+            const y3 = centerY + innerRadius * Math.sin(endAngle);
+            const x4 = centerX + innerRadius * Math.cos(startAngle);
+            const y4 = centerY + innerRadius * Math.sin(startAngle);
+            
+            const largeArcFlag = endAngle - startAngle > Math.PI ? 1 : 0;
+            
+            return `M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x4} ${y4} Z`;
+        }
+
+        function addLegend() {
+            const legend = document.getElementById('legend');
+            legend.innerHTML = '';
+            
+            data.forEach((d, i) => {
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.style.opacity = '0';
+                legendItem.innerHTML = `
+                    <div class="legend-color" style="background-color: ${d.color}"></div>
+                    <span class="legend-text">${d.category}: ${d.value}%</span>
+                `;
+                legend.appendChild(legendItem);
+            });
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateSegment(currentStep);
+        }
+
+        function animateSegment(index) {
+            if (index >= data.length || !isPlaying) {
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+                updateCenterValue(100);
+                return;
+            }
+            
+            const svg = document.getElementById('donutChart');
+            const segments = svg.querySelectorAll('.donut-segment');
+            const segment = segments[index];
+            const segmentData = data[index];
+            
+            // Animate legend item
+            const legendItems = document.querySelectorAll('.legend-item');
+            if (legendItems[index]) {
+                legendItems[index].style.transition = `opacity ${1000 / animationSpeed}ms ease`;
+                legendItems[index].style.opacity = '1';
+            }
+            
+            let startTime = null;
+            const duration = 1500 / animationSpeed;
+            const startAngle = segmentData.startAngle;
+            const endAngle = segmentData.endAngle;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Ease-out cubic function
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                const currentEndAngle = startAngle + (endAngle - startAngle) * easeProgress;
+                const pathData = getPathData(startAngle, currentEndAngle);
+                segment.setAttribute('d', pathData);
+                
+                // Update center value
+                const cumulativeValue = data.slice(0, index + 1).reduce((sum, d, i) => {
+                    if (i < index) return sum + d.value;
+                    return sum + d.value * easeProgress;
+                }, 0);
+                updateCenterValue(Math.round(cumulativeValue));
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Move to next segment after delay
+                    currentStep = index + 1;
+                    animationTimeout = setTimeout(() => {
+                        animateSegment(currentStep);
+                    }, 300 / animationSpeed);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function updateCenterValue(value) {
+            const centerValue = document.getElementById('centerValue');
+            centerValue.textContent = value + '%';
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('donutChart');
+            const segments = svg.querySelectorAll('.donut-segment');
+            
+            segments.forEach((segment, index) => {
+                const segmentData = data[index];
+                const pathData = getPathData(segmentData.startAngle, segmentData.startAngle);
+                segment.setAttribute('d', pathData);
+            });
+            
+            // Reset legend
+            const legendItems = document.querySelectorAll('.legend-item');
+            legendItems.forEach(item => {
+                item.style.opacity = '0';
+            });
+            
+            updateCenterValue(0);
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, data) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${data.category}</strong><br>
+                シェア: ${data.value}%<br>
+                値: ${((data.value / 100) * totalValue).toFixed(1)}
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <!-- Code Viewer Scripts -->
+    <script src="../scripts/prism-setup.js"></script>
+    <script src="../scripts/code-viewer.js"></script>
+</body>
+</html>

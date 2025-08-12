@@ -37,6 +37,9 @@
     </div>
 
     <script>
+        const width = 900;
+        const height = 450;
+        
         const roiData = {
             summary: {
                 totalInvestment: 250,
@@ -73,8 +76,8 @@
             svg.innerHTML = '';
             
             const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            bg.setAttribute('width', '900');
-            bg.setAttribute('height', '450');
+            bg.setAttribute('width', width);
+            bg.setAttribute('height', height);
             bg.setAttribute('fill', '#f8f9fa');
             svg.appendChild(bg);
             
@@ -195,7 +198,7 @@
                 roiText.setAttribute('x', projX + 300);
                 roiText.setAttribute('y', y);
                 roiText.setAttribute('class', 'roi-text');
-                roiText.setAttribute('fill', riskColors[project.risk);
+                roiText.setAttribute('fill', riskColors[project.risk]);
                 roiText.setAttribute('opacity', '0');
                 roiText.textContent = project.roi + '%';
                 svg.appendChild(roiText);

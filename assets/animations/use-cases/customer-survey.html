@@ -37,6 +37,9 @@
     </div>
 
     <script>
+        const width = 900;
+        const height = 450;
+        
         const surveyData = {
             overall: { score: 4.2, responses: 1247 },
             categories: [
@@ -68,8 +71,8 @@
             svg.innerHTML = '';
             
             const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            bg.setAttribute('width', '900');
-            bg.setAttribute('height', '450');
+            bg.setAttribute('width', width);
+            bg.setAttribute('height', height);
             bg.setAttribute('fill', '#f8f9fa');
             svg.appendChild(bg);
             

@@ -38,6 +38,9 @@
     </div>
 
     <script>
+        const width = 900;
+        const height = 450;
+        
         const historyData = {
             company: "株式会社イノベーション",
             milestones: [
@@ -61,8 +64,8 @@
             
             // Background
             const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            bg.setAttribute('width', '900');
-            bg.setAttribute('height', '450');
+            bg.setAttribute('width', width);
+            bg.setAttribute('height', height);
             bg.setAttribute('fill', '#f8f9fa');
             svg.appendChild(bg);
             
@@ -76,7 +79,7 @@
             const headerBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             headerBg.setAttribute('x', '0');
             headerBg.setAttribute('y', '0');
-            headerBg.setAttribute('width', '900');
+            headerBg.setAttribute('width', width);
             headerBg.setAttribute('height', '60');
             headerBg.setAttribute('fill', '#2c3e50');
             headerBg.setAttribute('opacity', '0');

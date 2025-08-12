@@ -1,0 +1,24 @@
+{
+  "name": "design",
+  "version": "1.0.0",
+  "description": "初学者がインフォグラフィックアニメーションの表現手法・活用シーンを体系的かつ視覚的に学べるWebツールです。",
+  "main": "script-simple.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tanamurayuuki/motion-refe.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tanamurayuuki/motion-refe/issues"
+  },
+  "homepage": "https://github.com/tanamurayuuki/motion-refe#readme",
+  "dependencies": {
+    "playwright": "^1.54.2"
+  }
+}

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ヒストグラムアニメーション - 年齢分布データ</title>
+    <link rel="stylesheet" href="../styles/animations.css">
+    <link rel="stylesheet" href="../styles/charts.css">
+    <link rel="stylesheet" href="../styles/code-viewer.css">
+</head>
+<body>
+    <div class="animation-container">
+        <h2 class="chart-title">年齢分布データ</h2>
+        
+        <div class="chart-area">
+            <div class="histogram-container">
+                <svg class="chart-svg" viewBox="0 0 800 400" id="histogramChart">
+                    <!-- Histogram bars will be added by JavaScript -->
+                </svg>
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="control-btn" id="playBtn" onclick="playAnimation()">再生</button>
+            <button class="control-btn pause" id="pauseBtn" onclick="pauseAnimation()">一時停止</button>
+            <button class="control-btn reset" id="resetBtn" onclick="resetAnimation()">リセット</button>
+            <div class="speed-control">
+                <label for="speedSelect">速度:</label>
+                <select id="speedSelect" onchange="changeSpeed()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for histogram (age distribution)
+        const data = [
+            { range: '10-19', frequency: 45, color: '#FF6B6B' },
+            { range: '20-29', frequency: 120, color: '#4ECDC4' },
+            { range: '30-39', frequency: 180, color: '#45B7D1' },
+            { range: '40-49', frequency: 160, color: '#96CEB4' },
+            { range: '50-59', frequency: 140, color: '#FECA57' },
+            { range: '60-69', frequency: 85, color: '#FF9FF3' },
+            { range: '70-79', frequency: 40, color: '#54A0FF' },
+            { range: '80+', frequency: 15, color: '#5F27CD' }
+        ];
+
+        let animationSpeed = 1;
+        let isPlaying = false;
+        let currentStep = 0;
+        let animationTimeout;
+
+        // Chart dimensions
+        const margin = { top: 40, right: 60, bottom: 60, left: 80 };
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        // Scales
+        const barWidth = width / data.length * 0.8;
+        const barSpacing = width / data.length * 0.2;
+        const maxFrequency = Math.max(...data.map(d => d.frequency));
+        
+        function getXPosition(index) {
+            return margin.left + (barWidth + barSpacing) * index + barSpacing / 2;
+        }
+        
+        function getBarHeight(frequency) {
+            return (frequency / maxFrequency) * height;
+        }
+
+        function initChart() {
+            const svg = document.getElementById('histogramChart');
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Add background grid
+            addGrid(svg);
+            
+            // Add axes
+            addAxes(svg);
+            
+            // Add bars (initially hidden)
+            data.forEach((d, i) => {
+                addBar(svg, d, i);
+            });
+            
+            // Add normal distribution curve
+            addNormalCurve(svg);
+        }
+
+        function addGrid(svg) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'grid');
+            
+            // Horizontal grid lines
+            for (let i = 0; i <= 6; i++) {
+                const y = margin.top + (height / 6) * i;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', margin.left);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', margin.left + width);
+                line.setAttribute('y2', y);
+                line.setAttribute('class', 'grid-line');
+                g.appendChild(line);
+            }
+            
+            svg.appendChild(g);
+        }
+
+        function addAxes(svg) {
+            // X axis
+            const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            xAxis.setAttribute('x1', margin.left);
+            xAxis.setAttribute('y1', margin.top + height);
+            xAxis.setAttribute('x2', margin.left + width);
+            xAxis.setAttribute('y2', margin.top + height);
+            xAxis.setAttribute('class', 'axis');
+            svg.appendChild(xAxis);
+
+            // Y axis
+            const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            yAxis.setAttribute('x1', margin.left);
+            yAxis.setAttribute('y1', margin.top);
+            yAxis.setAttribute('x2', margin.left);
+            yAxis.setAttribute('y2', margin.top + height);
+            yAxis.setAttribute('class', 'axis');
+            svg.appendChild(yAxis);
+
+            // X axis labels
+            data.forEach((d, i) => {
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', getXPosition(i) + barWidth / 2);
+                text.setAttribute('y', margin.top + height + 25);
+                text.setAttribute('class', 'label-text');
+                text.setAttribute('text-anchor', 'middle');
+                text.textContent = d.range;
+                svg.appendChild(text);
+            });
+
+            // Y axis labels
+            for (let i = 0; i <= 6; i++) {
+                const value = (maxFrequency / 6) * (6 - i);
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', margin.left - 15);
+                text.setAttribute('y', margin.top + (height / 6) * i + 5);
+                text.setAttribute('class', 'axis-label');
+                text.setAttribute('text-anchor', 'end');
+                text.textContent = Math.round(value);
+                svg.appendChild(text);
+            }
+
+            // Axis labels
+            const xLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            xLabel.setAttribute('x', margin.left + width / 2);
+            xLabel.setAttribute('y', margin.top + height + 50);
+            xLabel.setAttribute('class', 'axis-title');
+            xLabel.setAttribute('text-anchor', 'middle');
+            xLabel.textContent = '年齢範囲';
+            svg.appendChild(xLabel);
+
+            const yLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            yLabel.setAttribute('x', margin.left - 50);
+            yLabel.setAttribute('y', margin.top + height / 2);
+            yLabel.setAttribute('class', 'axis-title');
+            yLabel.setAttribute('text-anchor', 'middle');
+            yLabel.setAttribute('transform', `rotate(-90, ${margin.left - 50}, ${margin.top + height / 2})`);
+            yLabel.textContent = '人数';
+            svg.appendChild(yLabel);
+        }
+
+        function addBar(svg, d, index) {
+            const barHeight = getBarHeight(d.frequency);
+            
+            // Bar rectangle
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', getXPosition(index));
+            rect.setAttribute('y', margin.top + height); // Start from bottom
+            rect.setAttribute('width', barWidth);
+            rect.setAttribute('height', 0); // Start with 0 height
+            rect.setAttribute('fill', d.color);
+            rect.setAttribute('class', 'histogram-bar');
+            rect.setAttribute('data-frequency', d.frequency);
+            rect.setAttribute('data-range', d.range);
+            rect.setAttribute('opacity', '0.8');
+            rect.setAttribute('stroke', '#fff');
+            rect.setAttribute('stroke-width', '1');
+            
+            // Add hover events
+            rect.addEventListener('mouseenter', (e) => showTooltip(e, d));
+            rect.addEventListener('mouseleave', hideTooltip);
+            
+            svg.appendChild(rect);
+
+            // Frequency label
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', getXPosition(index) + barWidth / 2);
+            text.setAttribute('y', margin.top + height - barHeight - 8);
+            text.setAttribute('class', 'frequency-text');
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('opacity', '0');
+            text.textContent = d.frequency;
+            
+            svg.appendChild(text);
+        }
+
+        function addNormalCurve(svg) {
+            // Create smooth curve approximating normal distribution
+            const curvePoints = [];
+            const steps = 50;
+            
+            for (let i = 0; i <= steps; i++) {
+                const x = (width / steps) * i;
+                // Simple bell curve approximation
+                const normalizedX = (i - steps/2) / (steps/4);
+                const y = Math.exp(-normalizedX * normalizedX / 2) * height * 0.8;
+                curvePoints.push([margin.left + x, margin.top + height - y]);
+            }
+            
+            const pathData = curvePoints.reduce((path, point, index) => {
+                const command = index === 0 ? 'M' : 'L';
+                return path + `${command} ${point[0]} ${point[1]} `;
+            }, '');
+            
+            const curvePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            curvePath.setAttribute('d', pathData);
+            curvePath.setAttribute('class', 'normal-curve');
+            curvePath.setAttribute('fill', 'none');
+            curvePath.setAttribute('stroke', '#FF6B6B');
+            curvePath.setAttribute('stroke-width', '3');
+            curvePath.setAttribute('stroke-dasharray', '5,5');
+            curvePath.setAttribute('opacity', '0');
+            
+            svg.appendChild(curvePath);
+        }
+
+        function playAnimation() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            document.getElementById('playBtn').style.opacity = '0.5';
+            
+            animateBar(currentStep);
+        }
+
+        function animateBar(index) {
+            if (index >= data.length || !isPlaying) {
+                // Show normal curve after all bars
+                if (isPlaying) {
+                    showNormalCurve();
+                }
+                isPlaying = false;
+                document.getElementById('playBtn').style.opacity = '1';
+                return;
+            }
+            
+            const svg = document.getElementById('histogramChart');
+            const bars = svg.querySelectorAll('.histogram-bar');
+            const texts = svg.querySelectorAll('.frequency-text');
+            
+            const bar = bars[index];
+            const text = texts[index];
+            const targetHeight = getBarHeight(data[index].frequency);
+            
+            // Animate bar height
+            let startTime = null;
+            const duration = 800 / animationSpeed;
+            
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Ease-out cubic function
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                const currentHeight = targetHeight * easeProgress;
+                bar.setAttribute('height', currentHeight);
+                bar.setAttribute('y', margin.top + height - currentHeight);
+                
+                // Animate frequency text
+                const currentFrequency = Math.round(data[index].frequency * easeProgress);
+                text.textContent = currentFrequency;
+                text.setAttribute('opacity', easeProgress);
+                text.setAttribute('y', margin.top + height - currentHeight - 8);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Move to next bar after delay
+                    currentStep = index + 1;
+                    animationTimeout = setTimeout(() => {
+                        animateBar(currentStep);
+                    }, 150 / animationSpeed);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function showNormalCurve() {
+            const svg = document.getElementById('histogramChart');
+            const curve = svg.querySelector('.normal-curve');
+            
+            if (curve) {
+                curve.style.transition = `opacity ${1000 / animationSpeed}ms ease`;
+                curve.setAttribute('opacity', '0.7');
+            }
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearTimeout(animationTimeout);
+            document.getElementById('playBtn').style.opacity = '1';
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            currentStep = 0;
+            
+            const svg = document.getElementById('histogramChart');
+            const bars = svg.querySelectorAll('.histogram-bar');
+            const texts = svg.querySelectorAll('.frequency-text');
+            const curve = svg.querySelector('.normal-curve');
+            
+            bars.forEach(bar => {
+                bar.setAttribute('height', '0');
+                bar.setAttribute('y', margin.top + height);
+            });
+            
+            texts.forEach(text => {
+                text.setAttribute('opacity', '0');
+                text.textContent = '0';
+            });
+            
+            if (curve) {
+                curve.setAttribute('opacity', '0');
+            }
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speedSelect').value);
+        }
+
+        function showTooltip(event, data) {
+            const tooltip = document.getElementById('tooltip');
+            const percentage = ((data.frequency / data.reduce((sum, d) => sum + d.frequency, 0)) * 100).toFixed(1);
+            tooltip.innerHTML = `
+                <strong>年齢: ${data.range}歳</strong><br>
+                人数: ${data.frequency}人<br>
+                割合: ${percentage}%
+            `;
+            tooltip.style.left = event.pageX + 'px';
+            tooltip.style.top = event.pageY + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Initialize chart on load
+        window.addEventListener('load', () => {
+            initChart();
+            // Auto-play after 1 second
+            setTimeout(() => {
+                playAnimation();
+            }, 1000);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            initChart();
+        });
+    </script>
+
+    <!-- Code Viewer Scripts -->
+    <script src="../scripts/prism-setup.js"></script>
+    <script src="../scripts/code-viewer.js"></script>
+</body>
+</html>
